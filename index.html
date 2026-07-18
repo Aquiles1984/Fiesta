@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Fiesta Familiar</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body {
+    min-height: 100vh; color: #fff;
+    background: linear-gradient(160deg, #1B1035 0%, #2A1660 55%, #3A1450 100%);
+    background-attachment: fixed;
+  }
+  #app { max-width: 460px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+  .screen { flex: 1; display: flex; flex-direction: column; padding: 24px; }
+  .center { align-items: center; justify-content: center; text-align: center; }
+  h1 { font-size: 44px; font-weight: 900; margin: 8px 0 4px; letter-spacing: -1px; }
+  h2 { font-size: 30px; font-weight: 900; margin: 0 0 12px; line-height: 1.15; }
+  p { margin: 0; }
+  .sub { color: rgba(255,255,255,0.7); font-size: 17px; margin-bottom: 32px; max-width: 300px; }
+  .tiny { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 32px; max-width: 320px; }
+  .btn { border: none; border-radius: 18px; padding: 18px; font-size: 22px; font-weight: 900; color: #fff; width: 100%; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.3); transition: transform .1s; font-family: inherit; }
+  .btn:active { transform: scale(0.96); }
+  .btn:disabled { opacity: .45; }
+  .btn-red { background: #E21B3C; }
+  .btn-blue { background: #1368CE; }
+  .btn-green { background: #26890C; }
+  .btn-ghost { background: rgba(255,255,255,0.1); font-size: 17px; padding: 14px; }
+  .stack { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 340px; }
+  .input { border-radius: 18px; padding: 16px 18px; font-size: 20px; font-weight: 600; width: 100%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: #fff; font-family: inherit; }
+  .input::placeholder { color: rgba(255,255,255,0.3); }
+  .input:focus { outline: none; border-color: #fff; }
+  .code-input { text-align: center; font-size: 38px; font-weight: 900; letter-spacing: 12px; }
+  .back { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 15px; font-weight: 600; cursor: pointer; align-self: flex-start; margin-bottom: 12px; padding: 4px 0; font-family: inherit; }
+  .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
+  .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin: 12px 0; }
+  .emoji-grid button { width: 34px; height: 34px; border-radius: 50%; font-size: 18px; background: transparent; border: 2px solid transparent; cursor: pointer; }
+  .emoji-grid button.sel { background: rgba(255,255,255,0.25); border-color: #fff; }
+  .color-row { display: flex; gap: 10px; justify-content: center; }
+  .color-row button { width: 30px; height: 30px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
+  .color-row button.sel { border-color: #fff; }
+  .card { background: rgba(255,255,255,0.06); border-radius: 14px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .players-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 28px; }
+  .code-box { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 18px; padding: 14px 28px; margin-bottom: 20px; cursor: pointer; }
+  .code-box span { font-size: 46px; font-weight: 900; letter-spacing: 14px; }
+  .tag { font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 20px; }
+  .tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 22px; }
+  .label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+  .row-between { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .dots { display: flex; gap: 4px; margin-bottom: 18px; }
+  .dots div { height: 8px; flex: 1; border-radius: 4px; }
+  .bar { width: 100%; height: 10px; border-radius: 5px; background: rgba(255,255,255,0.15); overflow: hidden; margin-bottom: 22px; }
+  .bar div { height: 100%; border-radius: 5px; transition: width .3s; }
+  .opt { border: none; border-radius: 18px; padding: 18px; font-size: 20px; font-weight: 700; text-align: left; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: transform .1s; font-family: inherit; width: 100%; }
+  .opt:active { transform: scale(0.97); }
+  .opts { display: flex; flex-direction: column; gap: 12px; }
+  .banner { border-radius: 18px; padding: 22px 18px; text-align: center; font-weight: 900; font-size: 22px; margin-bottom: 28px; }
+  .reveal-opt { border-radius: 18px; padding: 16px 18px; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+  .rank-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 16px; }
+  .rank-row .l { display: flex; align-items: center; gap: 8px; }
+  .play-btn { display: inline-flex; align-items: center; gap: 8px; border: none; border-radius: 40px; padding: 16px 32px; font-size: 20px; font-weight: 900; color: #fff; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.3); font-family: inherit; }
+  .secret { background: rgba(255,255,255,0.1); border-radius: 18px; padding: 20px; font-size: 26px; font-weight: 900; margin-bottom: 26px; }
+  .guess-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .guess-grid button { display: flex; align-items: center; gap: 8px; border: none; border-radius: 12px; padding: 12px; background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; font-size: 15px; cursor: pointer; font-family: inherit; }
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; width: 100%; max-width: 340px; margin: 20px 0 32px; }
+  .podium .col { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  .podium .base { width: 100%; border-radius: 12px 12px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; font-weight: 900; }
+  .loading { text-align: center; padding-top: 80px; font-size: 18px; font-weight: 600; }
+  .err { color: #ffb3b3; font-weight: 600; text-align: center; }
+  .conn { font-size: 12px; text-align: center; color: rgba(255,255,255,0.4); padding: 6px; }
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">Cargando…</div></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, update, get, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAy_ljyhiUY8r81rr5JhcKwNt75NldS7XE",
+  authDomain: "fiesta-familiar.firebaseapp.com",
+  databaseURL: "https://fiesta-familiar-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "fiesta-familiar",
+  storageBucket: "fiesta-familiar.firebasestorage.app",
+  messagingSenderId: "1079846909024",
+  appId: "1:1079846909024:web:c95faf8e7c18f44bdf7f05",
+  measurementId: "G-Y910GX2RMH"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+
+/* ================== datos ================== */
+const CATS = {
+  trivia: { label: 'Preguntas', color: '#1368CE', icon: '❓', hint: 'Responded todos desde vuestro móvil' },
+  musica: { label: 'Adivina la melodía', color: '#00B8A9', icon: '🎵', hint: 'Que suene en un móvil y responded todos' },
+  mimica: { label: 'Mímica', color: '#FF6B9D', icon: '🎭', hint: 'Adivinad en voz alta qué representa' },
+  cantar: { label: 'Canta o tararea', color: '#864CBF', icon: '🎤', hint: 'Adivinad qué canción tararea' },
+  dibujar: { label: 'Dibuja', color: '#FF6D3F', icon: '🎨', hint: 'Adivinad qué dibuja en un papel' },
+  reto: { label: 'Reto', color: '#26890C', icon: '🔥', hint: 'Juzgad entre todos si lo consigue' },
+};
+const AVATAR_EMOJIS = ['🦁','🐯','🐨','🦊','🐸','🐵','🦄','🐙','🐧','🐶','🐱','🦉','🐢','🦋','🐔','🐷'];
+const AVATAR_COLORS = ['#E21B3C','#1368CE','#FFA602','#26890C','#864CBF','#FF6B9D','#00C2A8','#FF6D3F'];
+
+const QUESTION_BANK = [
+  {c:'Geografía',q:'¿Cuál es el país más grande del mundo por superficie?',o:['Rusia','Canadá','China','Estados Unidos'],a:0},
+  {c:'Historia',q:'¿En qué año llegó Cristóbal Colón a América?',o:['1492','1500','1453','1520'],a:0},
+  {c:'Cine',q:'¿Quién dirigió "Jurassic Park"?',o:['Steven Spielberg','James Cameron','George Lucas','Ridley Scott'],a:0},
+  {c:'Deportes',q:'¿Cada cuántos años se celebran los JJ.OO. de verano?',o:['2','3','4','5'],a:2},
+  {c:'Ciencia',q:'¿Cuál es el planeta más cercano al Sol?',o:['Venus','Mercurio','Tierra','Marte'],a:1},
+  {c:'Música',q:'¿Qué banda formaron Lennon y McCartney?',o:['Rolling Stones','The Beatles','Queen','Pink Floyd'],a:1},
+  {c:'Arte',q:'¿Quién pintó la Mona Lisa?',o:['Miguel Ángel','Rafael','Leonardo da Vinci','Donatello'],a:2},
+  {c:'Gastronomía',q:'¿De qué país es la pizza margarita?',o:['España','Francia','Italia','Grecia'],a:2},
+  {c:'Geografía',q:'¿Cuál es la capital de Australia?',o:['Sídney','Melbourne','Canberra','Perth'],a:2},
+  {c:'Historia',q:'¿Qué muro cayó en 1989?',o:['Muro de Berlín','Muralla China','Muro de Adriano','Muro de las Lamentaciones'],a:0},
+  {c:'Cine',q:'¿Qué actor interpreta a Iron Man?',o:['Chris Evans','Robert Downey Jr.','Chris Hemsworth','Mark Ruffalo'],a:1},
+  {c:'Deportes',q:'¿En qué deporte destacó Rafael Nadal?',o:['Fútbol','Baloncesto','Tenis','Golf'],a:2},
+  {c:'Ciencia',q:'¿Cuál es el hueso más largo del cuerpo?',o:['Fémur','Húmero','Tibia','Radio'],a:0},
+  {c:'Música',q:'¿Qué instrumento tiene 88 teclas?',o:['Guitarra','Piano','Acordeón','Arpa'],a:1},
+  {c:'Arte',q:'¿Quién escribió "Don Quijote de la Mancha"?',o:['Lope de Vega','Cervantes','García Lorca','Calderón'],a:1},
+  {c:'Gastronomía',q:'¿Ingrediente principal del guacamole?',o:['Tomate','Aguacate','Pimiento','Cebolla'],a:1},
+  {c:'Geografía',q:'¿Cuál es el océano más grande?',o:['Atlántico','Índico','Pacífico','Ártico'],a:2},
+  {c:'Historia',q:'¿Quién pisó la Luna primero?',o:['Buzz Aldrin','Neil Armstrong','Yuri Gagarin','John Glenn'],a:1},
+  {c:'Cine',q:'¿Qué película trata del hundimiento de un barco con DiCaprio?',o:['Titanic','Poseidón','El Náufrago','Pearl Harbor'],a:0},
+  {c:'Deportes',q:'¿Cuántos jugadores de fútbol hay en el campo por equipo?',o:['9','10','11','12'],a:2},
+  {c:'Ciencia',q:'¿Qué gas usan las plantas en la fotosíntesis?',o:['Oxígeno','Dióxido de carbono','Nitrógeno','Hidrógeno'],a:1},
+  {c:'Arte',q:'¿En qué país está el museo del Louvre?',o:['España','Italia','Francia','Reino Unido'],a:2},
+  {c:'Gastronomía',q:'¿Ingredientes de la tortilla de patatas?',o:['Arroz y pollo','Huevos y patatas','Pasta y queso','Pan y jamón'],a:1},
+  {c:'Geografía',q:'¿Qué país europeo tiene forma de bota?',o:['España','Italia','Grecia','Portugal'],a:1},
+  {c:'Cine',q:'¿Cómo se llama el león de "El Rey León"?',o:['Mufasa','Simba','Timón','Scar'],a:1},
+  {c:'Ciencia',q:'¿Qué metal es líquido a temperatura ambiente?',o:['Hierro','Mercurio','Plomo','Aluminio'],a:1},
+  {c:'Música',q:'¿Qué género es típico de Andalucía?',o:['Flamenco','Salsa','Reggae','Tango'],a:0},
+  {c:'Historia',q:'¿En qué siglo estamos?',o:['Siglo XX','Siglo XXI','Siglo XIX','Siglo XXII'],a:1},
+  {c:'Geografía',q:'¿Cuál es el río más largo del mundo?',o:['Nilo','Amazonas','Misisipi','Yangtsé'],a:1},
+  {c:'Geografía',q:'¿En qué continente está Egipto?',o:['Asia','Europa','África','Oceanía'],a:2},
+  {c:'Geografía',q:'¿Cuál es el país más poblado del mundo?',o:['China','India','EE.UU.','Indonesia'],a:1},
+  {c:'Ciencia',q:'¿Cuántos planetas tiene el sistema solar?',o:['7','8','9','10'],a:1},
+  {c:'Ciencia',q:'¿Qué animal es el mamífero más grande?',o:['Elefante','Ballena azul','Jirafa','Rinoceronte'],a:1},
+  {c:'Ciencia',q:'¿Cuántos corazones tiene un pulpo?',o:['1','2','3','4'],a:2},
+  {c:'Ciencia',q:'¿Qué vitamina aporta principalmente el sol?',o:['Vitamina A','Vitamina C','Vitamina D','Vitamina K'],a:2},
+  {c:'Cine',q:'¿De qué color es el genio en "Aladdín"?',o:['Verde','Azul','Rojo','Morado'],a:1},
+  {c:'Cine',q:'¿Cómo se llama el pez protagonista de "Buscando a Nemo"?',o:['Dory','Marlin','Nemo','Bruce'],a:2},
+  {c:'Música',q:'¿De qué país es originario el reguetón?',o:['México','Puerto Rico','España','Argentina'],a:1},
+  {c:'Música',q:'¿Quién canta "Bohemian Rhapsody"?',o:['The Beatles','Queen','Rolling Stones','ABBA'],a:1},
+  {c:'Deportes',q:'¿Con cuántos anillos se representan los JJ.OO.?',o:['4','5','6','7'],a:1},
+  {c:'Deportes',q:'¿Cuántos jugadores hay por equipo en la cancha de baloncesto?',o:['5','6','7','11'],a:0},
+  {c:'Historia',q:'¿Qué civilización construyó las pirámides de Giza?',o:['Los romanos','Los griegos','Los egipcios','Los mayas'],a:2},
+  {c:'Historia',q:'¿En qué país se inventó el papel?',o:['Egipto','China','Grecia','India'],a:1},
+  {c:'Gastronomía',q:'¿De qué se hace principalmente el chocolate?',o:['Cacao','Café','Vainilla','Caña de azúcar'],a:0},
+  {c:'Gastronomía',q:'¿Qué país es famoso por el sushi?',o:['China','Japón','Tailandia','Corea'],a:1},
+  {c:'Gastronomía',q:'¿Qué fruta es la base del vino?',o:['Manzana','Uva','Pera','Ciruela'],a:1},
+  {c:'Arte',q:'¿Qué artista se cortó una oreja?',o:['Picasso','Van Gogh','Dalí','Monet'],a:1},
+  {c:'Arte',q:'¿De qué nacionalidad era Salvador Dalí?',o:['Italiano','Francés','Español','Holandés'],a:2},
+  {c:'Naturaleza',q:'¿Cuál es el animal terrestre más rápido?',o:['Guepardo','León','Caballo','Galgo'],a:0},
+  {c:'Naturaleza',q:'¿Qué insecto produce la miel?',o:['Avispa','Abeja','Mosca','Hormiga'],a:1},
+  {c:'Cuerpo',q:'¿Cuántos dientes tiene un adulto (con muelas del juicio)?',o:['28','30','32','36'],a:2},
+  {c:'General',q:'¿Cuántos lados tiene un hexágono?',o:['5','6','7','8'],a:1},
+  {c:'General',q:'¿Qué color sale al mezclar azul y amarillo?',o:['Verde','Naranja','Morado','Marrón'],a:0},
+];
+
+const NOTE={R:0,C4:261.63,D4:293.66,Eb4:311.13,E4:329.63,F4:349.23,G4:392.0,Ab4:415.3,A4:440.0,Bb4:466.16,B4:493.88,C5:523.25,Db5:554.37,D5:587.33,Eb5:622.25,E5:659.25,F5:698.46,G5:783.99};
+const mel=s=>s.split(' ').map(t=>{const[n,d]=t.split(':');return[NOTE[n]||0,parseFloat(d)];});
+const MUSIC_BANK=[
+  {song:'Cumpleaños feliz',m:mel('G4:0.3 G4:0.3 A4:0.6 G4:0.6 C5:0.6 B4:0.9 G4:0.3 G4:0.3 A4:0.6 G4:0.6 D5:0.6 C5:0.9 G4:0.3 G4:0.3 G5:0.6 E5:0.6 C5:0.6 B4:0.6 A4:0.9 F5:0.3 F5:0.3 E5:0.6 C5:0.6 D5:0.6 C5:1.0'),o:['Cumpleaños feliz','Noche de paz','La cucaracha','Oda a la alegría'],a:0},
+  {song:'Para Elisa (Beethoven)',m:mel('E5:0.25 Eb5:0.25 E5:0.25 Eb5:0.25 E5:0.25 B4:0.25 D5:0.25 C5:0.25 A4:0.5 R:0.15 C4:0.25 E4:0.25 A4:0.25 B4:0.5 R:0.15 E4:0.25 Ab4:0.25 B4:0.25 C5:0.6'),o:['Para Elisa (Beethoven)','Marcha nupcial','Marcha turca','La habanera'],a:0},
+  {song:'Oda a la alegría (Beethoven)',m:mel('E4:0.4 E4:0.4 F4:0.4 G4:0.4 G4:0.4 F4:0.4 E4:0.4 D4:0.4 C4:0.4 C4:0.4 D4:0.4 E4:0.4 E4:0.6 D4:0.2 D4:0.9'),o:['Oda a la alegría (Beethoven)','Para Elisa','Quinta de Beethoven','Cumpleaños feliz'],a:0},
+  {song:'Quinta de Beethoven',m:mel('G4:0.2 G4:0.2 G4:0.2 Eb4:0.9 R:0.25 F4:0.2 F4:0.2 F4:0.2 D4:0.9'),o:['Quinta de Beethoven','Oda a la alegría','Marcha nupcial','La habanera'],a:0},
+  {song:'Pequeña serenata nocturna (Mozart)',m:mel('G4:0.3 D4:0.3 G4:0.3 D4:0.3 G4:0.2 D4:0.2 G4:0.2 B4:0.2 D5:0.6 R:0.15 C5:0.3 A4:0.3 C5:0.3 A4:0.3 C5:0.2 A4:0.2 C5:0.2 A4:0.2 D5:0.6'),o:['Pequeña serenata nocturna (Mozart)','Marcha turca','La primavera de Vivaldi','Para Elisa'],a:0},
+  {song:'Marcha turca (Mozart)',m:mel('B4:0.2 A4:0.2 Ab4:0.2 A4:0.2 C5:0.5 R:0.1 D5:0.2 C5:0.2 B4:0.2 C5:0.2 E5:0.5 R:0.1 F5:0.2 E5:0.2 Eb5:0.2 E5:0.2 G5:0.6'),o:['Marcha turca (Mozart)','Pequeña serenata nocturna','La habanera','Quinta de Beethoven'],a:0},
+  {song:'La habanera (Carmen, Bizet)',m:mel('D5:0.35 Db5:0.35 C5:0.35 B4:0.35 Bb4:0.5 A4:0.5 R:0.1 A4:0.3 Bb4:0.3 A4:0.3 Ab4:0.3 A4:0.6'),o:['La habanera (Carmen, Bizet)','Marcha turca','Cielito lindo','Marcha nupcial'],a:0},
+  {song:'Campanita del lugar',m:mel('C4:0.4 C4:0.4 G4:0.4 G4:0.4 A4:0.4 A4:0.4 G4:0.8 F4:0.4 F4:0.4 E4:0.4 E4:0.4 D4:0.4 D4:0.4 C4:0.9'),o:['Campanita del lugar','La cucaracha','Jingle Bells','Noche de paz'],a:0},
+  {song:'Jingle Bells',m:mel('E4:0.4 E4:0.4 E4:0.8 E4:0.4 E4:0.4 E4:0.8 E4:0.4 G4:0.4 C4:0.4 D4:0.4 E4:1.0 F4:0.4 F4:0.4 F4:0.4 F4:0.4 F4:0.4 E4:0.4 E4:0.4 E4:0.2 E4:0.2 G4:0.4 G4:0.4 F4:0.4 D4:0.4 C4:1.0'),o:['Jingle Bells','Noche de paz','Oda a la alegría','Cumpleaños feliz'],a:0},
+  {song:'La cucaracha',m:mel('C4:0.3 C4:0.3 C4:0.3 F4:0.5 A4:0.6 R:0.2 C4:0.3 C4:0.3 C4:0.3 F4:0.5 A4:0.8 R:0.2 F4:0.4 F4:0.4 E4:0.4 E4:0.4 D4:0.4 D4:0.4 C4:0.9'),o:['La cucaracha','Cielito lindo','La habanera','Campanita del lugar'],a:0},
+  {song:'Cielito lindo',m:mel('E4:0.4 G4:0.4 C5:0.7 R:0.15 C5:0.35 B4:0.35 C5:0.35 D5:0.35 C5:0.35 B4:0.35 A4:0.7'),o:['Cielito lindo','La cucaracha','La habanera','Cumpleaños feliz'],a:0},
+  {song:'Noche de paz',m:mel('G4:0.5 A4:0.25 G4:0.5 E4:1.0 R:0.15 G4:0.5 A4:0.25 G4:0.5 E4:1.0 R:0.15 D5:0.75 D5:0.5 B4:1.0 R:0.15 C5:0.75 C5:0.5 G4:1.0'),o:['Noche de paz','Jingle Bells','Cumpleaños feliz','Oda a la alegría'],a:0},
+  {song:'Marcha nupcial',m:mel('C4:0.4 F4:0.8 F4:0.3 F4:1.0 R:0.15 C4:0.4 G4:0.8 F4:0.3 E4:0.3 F4:1.0'),o:['Marcha nupcial','Quinta de Beethoven','Para Elisa','Campanita del lugar'],a:0},
+];
+
+const MIMICA_BANK=['Nadar','Montar en bicicleta','Un mono comiendo un plátano','Lavarse los dientes','Jugar al fútbol','Un elefante','Tocar la guitarra','Dormir y roncar','Freír un huevo','Conducir un coche','Un boxeador','Peinarse ante el espejo','Un pingüino caminando','Hacer una tarta','Bailar flamenco','Un mago con un truco','Pescar','Hacer surf','Un vaquero a caballo','Un robot','Un torero','Planchar la ropa','Un gato lamiéndose','Tocar el piano','Escalar una montaña','Un director de orquesta','Sacar una foto','Un camarero con una bandeja','Comer una sopa muy caliente','Un futbolista celebrando un gol','Barrer el suelo','Un astronauta en la Luna','Hacer yoga','Un león rugiendo','Colgar la ropa','Un tenista sacando','Abrir un regalo','Un bebé gateando','Remar en una barca','Un policía dirigiendo el tráfico'];
+const CANTAR_BANK=['Despacito','Quédate (Quevedo)','Tití me preguntó','Ella baila sola','La Bachata','Flowers (Miley Cyrus)','Shape of You','Dákiti','Tusa','Con Altura','Pepas','TQG (Shakira y Karol G)','Waka Waka','Vivir mi vida','Bailando (Enrique Iglesias)','Gasolina','Danza Kuduro','La Camisa Negra','Corazón partío','Aserejé','Baby Shark','Suéltalo (Frozen)','We Will Rock You','YMCA','La Macarena','Bamboleo','Color esperanza','Resistiré','La Bamba','Paquito el Chocolatero','Que viva España','Mi gran noche'];
+const DIBUJAR_BANK=['Un sol con gafas','Una casa con jardín','Un gato durmiendo','Una pizza','Un helado derritiéndose','Un avión','Un árbol de Navidad','Un fantasma','Una tarta de cumpleaños','Un paraguas bajo la lluvia','Un robot','Un dinosaurio','Una sirena','Un cohete','Un unicornio','Un castillo','Una bicicleta','Un pulpo','Un arcoíris','Un barco pirata','Un caracol','Una tortuga','Un coche de carreras','Un molino de viento','Una flor gigante','Un pingüino con bufanda','Un mago con sombrero','Un faro junto al mar','Un león con melena','Una hamburguesa','Un globo aerostático','Un búho en una rama','Una montaña con nieve','Un tren','Un payaso','Una rana saltando','Un semáforo','Un cactus','Una escoba de bruja','Un delfín saltando'];
+const RETO_BANK=['Aguanta un libro en la cabeza 10 segundos','Di "tres tristes tigres" tres veces sin fallar','Haz reír a otro jugador en 15 segundos sin tocarle','Camina talón-punta 5 pasos seguidos','Imita otro acento durante 20 segundos','Adivina un objeto con los ojos cerrados tocándolo','Haz una pose de modelo 10 segundos','Cuenta un chiste corto','Silba una melodía 10 segundos','Recita el abecedario al revés lo más rápido posible','Haz de presentador de telediario 15 segundos','Imita a un animal sin decir cuál es','Inventa un eslogan para el objeto más cercano','Baila sin música durante 15 segundos','Di un trabalenguas a toda velocidad','Nombra 5 países de África en 15 segundos','Aguanta 10 segundos a la pata coja con los ojos cerrados','Di 5 marcas de coche en 10 segundos','Sonríe 15 segundos aunque intenten hacerte reír','Imita a un famoso y que los demás lo adivinen','Canta una frase como si fueras de ópera','Haz 5 sentadillas contando en voz alta','Pon 3 caras: alegría, susto y enfado','Nombra 6 sabores de helado en 15 segundos'];
+
+const INTRO_MS=2600, TRIVIA_MS=20000, MUSIC_MS=25000, PERFORM_MS=60000, RETO_MS=45000, REVEAL_MS=4500;
+
+/* ================== utilidades ================== */
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function genId(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
+function genCode(){return String(Math.floor(1000+Math.random()*9000));}
+function shOpts(o,a){const t=o[a];const s=shuffle(o);return{o:s,a:s.indexOf(t)};}
+function pickFresh(bank,n,used){used=used||[];const u=new Set(used);let av=bank.filter(x=>!u.has(x));if(av.length<n){used.length=0;av=[...bank];}const ch=shuffle(av).slice(0,n);ch.forEach(c=>used.push(c));return{chosen:ch,used};}
+
+function buildPlan(players,hist){
+  const h=hist||{};['mimica','cantar','dibujar','reto','trivia','musica'].forEach(k=>{if(!Array.isArray(h[k]))h[k]=[];});
+  const perfCats=['mimica','cantar','dibujar','reto'];
+  const banks={mimica:MIMICA_BANK,cantar:CANTAR_BANK,dibujar:DIBUJAR_BANK,reto:RETO_BANK};
+  let perf=[];
+  for(let pass=0;pass<2;pass++){
+    const sp=shuffle(players), sc=shuffle(perfCats);
+    sp.forEach((p,idx)=>{const cat=sc[idx%sc.length];const r=pickFresh(banks[cat],1,h[cat]);h[cat]=r.used;perf.push({type:cat,pid:p.id,pname:p.name,prompt:r.chosen[0]});});
+  }
+  perf=shuffle(perf);
+  const tc=Math.min(10,Math.max(5,players.length));
+  const tq=pickFresh(QUESTION_BANK.map(q=>q.q),tc,h.trivia);h.trivia=tq.used;
+  const trivia=tq.chosen.map(qt=>QUESTION_BANK.find(q=>q.q===qt)).map(q=>{const s=shOpts(q.o,q.a);return{type:'trivia',category:q.c,question:q.q,options:s.o,correct:s.a};});
+  const ms=pickFresh(MUSIC_BANK.map(m=>m.song),Math.min(MUSIC_BANK.length,5),h.musica);h.musica=ms.used;
+  const music=ms.chosen.map(sn=>MUSIC_BANK.find(m=>m.song===sn)).map(m=>{const s=shOpts(m.o,m.a);return{type:'musica',song:m.song,melody:m.m,options:s.o,correct:s.a};});
+  const quiz=shuffle([...trivia,...music]);
+  const total=perf.length+quiz.length;
+  const qpos=new Set();for(let k=0;k<quiz.length;k++)qpos.add(Math.round((k+0.5)*total/quiz.length));
+  const plan=[];let pi=0,qi=0;
+  for(let i=0;i<total;i++){if(qpos.has(i)&&qi<quiz.length)plan.push(quiz[qi++]);else if(pi<perf.length)plan.push(perf[pi++]);else if(qi<quiz.length)plan.push(quiz[qi++]);}
+  return{plan:plan.map((r,i)=>({...r,id:i})),history:h};
+}
+
+/* ================== audio ================== */
+let audioCtx=null;
+function playMelody(melody){
+  try{
+    if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    let t=audioCtx.currentTime+0.05,total=0.05;
+    melody.forEach(([f,d])=>{
+      if(f>0){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.28,t+0.03);g.gain.exponentialRampToValueAtTime(0.0001,t+d*0.9);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+d);}
+      t+=d;total+=d;
+    });
+    state.playingUntil=Date.now()+total*1000;render();
+  }catch(e){}
+}
+
+/* ================== estado local ================== */
+const state = {
+  screen: 'home', mode: 'create',
+  name: localStorage.getItem('ff_name')||'',
+  avatar: localStorage.getItem('ff_avatar')||AVATAR_EMOJIS[0],
+  color: localStorage.getItem('ff_color')||AVATAR_COLORS[0],
+  codeInput: '', roomCode: null, playerId: genId(),
+  meta: null, error: '', busy: false,
+  selectedOption: null, answeredRound: -1, submittedResult: -1,
+  playingUntil: 0, copied: false,
+};
+let roomUnsub = null;
+let hostTimer = null;
+
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ================== Firebase refs ================== */
+const roomRef = c => ref(db, 'rooms/'+c);
+const metaRef = c => ref(db, 'rooms/'+c+'/meta');
+const playerRef = (c,pid) => ref(db, 'rooms/'+c+'/players/'+pid);
+const ansRef = (c,g,r,pid) => ref(db, 'rooms/'+c+'/g'+g+'/ans/'+r+'/'+pid);
+const resRef = (c,g,r) => ref(db, 'rooms/'+c+'/g'+g+'/res/'+r);
+
+/* ================== acciones ================== */
+async function createRoom(){
+  if(!state.name.trim()){state.error='Escribe tu nombre';render();return;}
+  saveProfile(); state.busy=true; state.error=''; render();
+  const code=genCode();
+  const meta={code,hostId:state.playerId,phase:'lobby',gameId:1,
+    history:{mimica:[],cantar:[],dibujar:[],reto:[],trivia:[],musica:[]},
+    currentRound:0,totalRounds:0,sub:null,introAt:null,activeAt:null,revealAt:null,lastResult:null,plan:null,createdAt:Date.now()};
+  await set(metaRef(code), meta);
+  await set(playerRef(code,state.playerId), {id:state.playerId,name:state.name.trim(),avatar:state.avatar,color:state.color,score:0,joinedAt:Date.now()});
+  onDisconnect(playerRef(code,state.playerId)).remove();
+  state.roomCode=code; state.busy=false; state.screen='room'; subscribeRoom(code); render();
+}
+async function joinRoom(){
+  if(!state.name.trim()){state.error='Escribe tu nombre';render();return;}
+  const code=state.codeInput.trim();
+  if(code.length!==4){state.error='El código tiene 4 dígitos';render();return;}
+  saveProfile(); state.busy=true; state.error=''; render();
+  const snap=await get(metaRef(code));
+  if(!snap.exists()){state.error='No existe ninguna sala con ese código';state.busy=false;render();return;}
+  await set(playerRef(code,state.playerId), {id:state.playerId,name:state.name.trim(),avatar:state.avatar,color:state.color,score:0,joinedAt:Date.now()});
+  onDisconnect(playerRef(code,state.playerId)).remove();
+  state.roomCode=code; state.busy=false; state.screen='room'; subscribeRoom(code); render();
+}
+function playersArr(meta){ const p=meta&&meta.players?Object.values(meta.players):[]; return p.sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)); }
+
+async function startGame(){
+  const meta=state.meta; if(!meta)return;
+  const players=playersArr(meta);
+  const {plan,history}=buildPlan(players,meta.history);
+  await update(metaRef(state.roomCode), {phase:'round',history,plan,currentRound:0,totalRounds:plan.length,sub:'intro',introAt:Date.now(),lastResult:null});
+}
+async function playAgain(){
+  const meta=state.meta; if(!meta)return;
+  const players=playersArr(meta).map(p=>({...p,score:0}));
+  const {plan,history}=buildPlan(players,meta.history);
+  const playersObj={}; players.forEach(p=>playersObj[p.id]=p);
+  await update(metaRef(state.roomCode), {players:playersObj,phase:'round',gameId:(meta.gameId||1)+1,history,plan,currentRound:0,totalRounds:plan.length,sub:'intro',introAt:Date.now(),activeAt:null,revealAt:null,lastResult:null});
+  state.selectedOption=null; state.answeredRound=-1; state.submittedResult=-1;
+}
+async function answer(i){
+  const meta=state.meta; if(!meta||meta.sub!=='active'||state.answeredRound===meta.currentRound)return;
+  state.selectedOption=i; state.answeredRound=meta.currentRound; render();
+  await set(ansRef(state.roomCode,meta.gameId||1,meta.currentRound,state.playerId), {o:i,at:Date.now()});
+}
+async function submitResult(payload){
+  const meta=state.meta; if(!meta||state.submittedResult===meta.currentRound)return;
+  state.submittedResult=meta.currentRound; render();
+  await set(resRef(state.roomCode,meta.gameId||1,meta.currentRound), payload);
+}
+function leave(){
+  if(roomUnsub){roomUnsub();roomUnsub=null;}
+  if(hostTimer){clearInterval(hostTimer);hostTimer=null;}
+  if(state.roomCode) remove(playerRef(state.roomCode,state.playerId)).catch(()=>{});
+  state.screen='home'; state.roomCode=null; state.meta=null; state.selectedOption=null;
+  state.answeredRound=-1; state.submittedResult=-1; state.error=''; render();
+}
+function saveProfile(){
+  localStorage.setItem('ff_name',state.name.trim());
+  localStorage.setItem('ff_avatar',state.avatar);
+  localStorage.setItem('ff_color',state.color);
+}
+function copyCode(){ try{navigator.clipboard.writeText(state.roomCode);state.copied=true;render();setTimeout(()=>{state.copied=false;render();},1500);}catch(e){} }
+
+/* ================== bucle del anfitrión (avanza la partida) ================== */
+function subscribeRoom(code){
+  if(roomUnsub)roomUnsub();
+  roomUnsub = onValue(metaRef(code), snap=>{
+    state.meta = snap.val();
+    render();
+  });
+  if(hostTimer)clearInterval(hostTimer);
+  hostTimer = setInterval(hostTick, 700);
+}
+async function hostTick(){
+  const meta=state.meta;
+  if(!meta||meta.hostId!==state.playerId)return; // solo el anfitrión hace avanzar el juego
+  if(meta.phase!=='round')return;
+  const round=meta.plan[meta.currentRound];
+  const t=Date.now();
+  const isQuiz=round.type==='trivia'||round.type==='musica';
+  if(meta.sub==='intro'){
+    if(meta.introAt && t-meta.introAt>INTRO_MS) await update(metaRef(state.roomCode),{sub:'active',activeAt:t});
+    return;
+  }
+  if(meta.sub==='active'){
+    const players=playersArr(meta);
+    if(isQuiz){
+      const snap=await get(ansRef(state.roomCode,meta.gameId||1,meta.currentRound,'').parent||ref(db,'rooms/'+state.roomCode+'/g'+(meta.gameId||1)+'/ans/'+meta.currentRound));
+      const ans=snap.exists()?snap.val():{};
+      const list=Object.keys(ans).map(pid=>({pid,...ans[pid]}));
+      const allAns=players.length>0 && list.length>=players.length;
+      const timeUp=meta.activeAt && t-meta.activeAt>(round.type==='musica'?MUSIC_MS:TRIVIA_MS);
+      if(allAns||timeUp){
+        const sorted=list.sort((a,b)=>a.at-b.at); const bonus=[50,30,20];let rank=0;const deltas={};
+        sorted.forEach(a=>{if(a.o===round.correct){deltas[a.pid]=100+(bonus[rank]!==undefined?bonus[rank]:10);rank++;}else deltas[a.pid]=0;});
+        const playersObj={}; players.forEach(p=>playersObj[p.id]={...p,score:(p.score||0)+(deltas[p.id]||0)});
+        await update(metaRef(state.roomCode),{players:playersObj,sub:'reveal',revealAt:t,lastResult:{type:round.type,deltas}});
+      }
+    } else {
+      const dur=round.type==='reto'?RETO_MS:PERFORM_MS;
+      const snap=await get(resRef(state.roomCode,meta.gameId||1,meta.currentRound));
+      const res=snap.exists()?snap.val():null;
+      const timeUp=meta.activeAt && t-meta.activeAt>dur;
+      if(res||timeUp){
+        const success=res?res.success:false; const guesserId=res&&res.guesserId; const deltas={};
+        if(round.type==='reto'){if(success)deltas[round.pid]=100;}
+        else if(success&&guesserId){deltas[guesserId]=80;deltas[round.pid]=(deltas[round.pid]||0)+60;}
+        const playersObj={}; players.forEach(p=>playersObj[p.id]={...p,score:(p.score||0)+(deltas[p.id]||0)});
+        await update(metaRef(state.roomCode),{players:playersObj,sub:'reveal',revealAt:t,lastResult:{type:round.type,success,guesserId,deltas}});
+      }
+    }
+    return;
+  }
+  if(meta.sub==='reveal'){
+    if(meta.revealAt && t-meta.revealAt>REVEAL_MS){
+      const next=meta.currentRound+1;
+      if(next>=meta.totalRounds) await update(metaRef(state.roomCode),{phase:'end'});
+      else await update(metaRef(state.roomCode),{currentRound:next,sub:'intro',introAt:t,activeAt:null,revealAt:null,lastResult:null});
+    }
+  }
+}
+
+/* ================== reloj para animar barra ================== */
+setInterval(()=>{ if(state.screen==='room'&&state.meta&&(state.meta.sub==='active'||state.playingUntil>Date.now())) render(); }, 300);
+
+/* ================== render (HTML) ================== */
+const app = document.getElementById('app');
+
+function avatarHTML(p,size){ return `<div class="avatar" style="width:${size}px;height:${size}px;background:${p.color};font-size:${Math.round(size*0.55)}px">${p.avatar}</div>`; }
+
+function render(){
+  const s=state;
+  if(s.screen==='home'){
+    app.innerHTML=`<div class="screen center">
+      <div style="font-size:26px;margin-bottom:12px">🎵🎭🎤🎨🔥❓</div>
+      <h1>Fiesta Familiar</h1>
+      <p class="sub">Preguntas, melodías, mímica, canciones, dibujos y retos. Todas las edades, un móvil cada uno.</p>
+      <div class="stack">
+        <button class="btn btn-red" data-act="go-create">Crear partida</button>
+        <button class="btn btn-blue" data-act="go-join">Unirse a partida</button>
+      </div>
+      <p class="tiny">Tened a mano papel y boli para dibujar 🎨. Funciona en cualquier móvil, sin instalar nada.</p>
+    </div>`;
+    return bind();
+  }
+  if(s.screen==='setup'){
+    const isC=s.mode==='create';
+    app.innerHTML=`<div class="screen">
+      <button class="back" data-act="home">← Volver</button>
+      <div class="center" style="flex:none"><h2>${isC?'Crear partida':'Unirse a partida'}</h2></div>
+      <div class="stack" style="margin:0 auto">
+        <div class="center" style="flex:none">
+          ${avatarHTML(s,72)}
+          <div class="emoji-grid">${AVATAR_EMOJIS.map(e=>`<button data-emoji="${e}" class="${s.avatar===e?'sel':''}">${e}</button>`).join('')}</div>
+          <div class="color-row">${AVATAR_COLORS.map(c=>`<button data-color="${c}" class="${s.color===c?'sel':''}" style="background:${c}"></button>`).join('')}</div>
+        </div>
+        ${isC?'':`<input class="input code-input" id="codeInput" inputmode="numeric" maxlength="4" placeholder="0000" value="${esc(s.codeInput)}">`}
+        <input class="input" id="nameInput" placeholder="Tu nombre" value="${esc(s.name)}">
+        ${s.error?`<p class="err">${esc(s.error)}</p>`:''}
+        <button class="btn ${isC?'btn-red':'btn-blue'}" data-act="${isC?'create':'join'}" ${s.busy?'disabled':''}>${s.busy?'Un momento…':(isC?'Crear sala':'Unirme')}</button>
+      </div>
+    </div>`;
+    return bind();
+  }
+  if(s.screen==='room'){
+    if(!s.meta){ app.innerHTML=`<div class="screen"><p class="loading">Conectando con la sala…</p></div>`; return bind(); }
+    const meta=s.meta, isHost=meta.hostId===s.playerId, players=playersArr(meta);
+    if(meta.phase==='lobby') return renderLobby(meta,isHost,players);
+    if(meta.phase==='end') return renderEnd(meta,isHost,players);
+    return renderRound(meta,isHost,players);
+  }
+}
+
+function renderLobby(meta,isHost,players){
+  app.innerHTML=`<div class="screen center">
+    <button class="back" data-act="leave">← Salir</button>
+    <p class="label">Código de la sala</p>
+    <div class="code-box" data-act="copy"><span>${meta.code}</span><span style="font-size:16px">${state.copied?'✓':'📋'}</span></div>
+    <div class="tags">${Object.values(CATS).map(c=>`<span class="tag" style="background:${c.color}33">${c.icon} ${c.label}</span>`).join('')}</div>
+    <div style="width:100%;max-width:340px">
+      <p class="label" style="text-align:left">👥 ${players.length} en la sala</p>
+      <div class="players-grid">${players.map(p=>`<div class="card">${avatarHTML(p,36)}<span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}${p.id===meta.hostId?' 👑':''}</span></div>`).join('')}</div>
+      ${isHost
+        ? `<button class="btn btn-red" data-act="start" ${players.length<2?'disabled':''}>${players.length<2?'Necesitáis 2 jugadores':'Iniciar partida'}</button>`
+        : `<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Esperando a que el anfitrión inicie…</p>`}
+    </div>
+    <p class="conn">Comparte el código o el enlace de esta página con los demás.</p>
+  </div>`;
+  bind();
+}
+
+function dotsHTML(meta){ return `<div class="dots">${meta.plan.map((r,i)=>`<div style="background:${i<meta.currentRound?CATS[r.type].color:(i===meta.currentRound?'rgba(255,255,255,.5)':'rgba(255,255,255,.12)')}"></div>`).join('')}</div>`; }
+
+function renderRound(meta,isHost,players){
+  const round=meta.plan[meta.currentRound], cat=CATS[round.type];
+  const isPerf=round.type!=='trivia'&&round.type!=='musica';
+  const isProt=isPerf&&round.pid===state.playerId;
+  const prot=isPerf?players.find(p=>p.id===round.pid):null;
+
+  if(meta.sub==='intro'){
+    app.innerHTML=`<div class="screen center">
+      <div style="width:100%;max-width:340px">${dotsHTML(meta)}</div>
+      <div style="font-size:64px;margin-bottom:12px">${cat.icon}</div>
+      <p class="label" style="color:${cat.color}">Ronda ${meta.currentRound+1} de ${meta.totalRounds}</p>
+      <h2>${cat.label}</h2>
+      ${prot?`${avatarHTML(prot,64)}<p style="font-size:20px;font-weight:700;margin-top:8px">Le toca a ${esc(prot.name)}</p>`:`<p style="font-size:20px;font-weight:700;color:rgba(255,255,255,.7)">¡Preparaos todos!</p>`}
+    </div>`;
+    return bind();
+  }
+
+  if(meta.sub==='active'){
+    const dur=round.type==='trivia'?TRIVIA_MS:round.type==='musica'?MUSIC_MS:round.type==='reto'?RETO_MS:PERFORM_MS;
+    const rem=Math.max(0,dur-(Date.now()-(meta.activeAt||Date.now())));
+    const pct=Math.max(0,Math.min(100,rem/dur*100));
+    const secs=Math.ceil(rem/1000);
+    const optColors=['#E21B3C','#1368CE','#FFA602','#26890C'];
+
+    if(round.type==='trivia'||round.type==='musica'){
+      const answered=state.answeredRound===meta.currentRound;
+      const isPlaying=Date.now()<state.playingUntil;
+      app.innerHTML=`<div class="screen">
+        ${dotsHTML(meta)}
+        <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} ${round.type==='trivia'?esc(round.category):cat.label}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
+        <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
+        ${round.type==='musica'
+          ? `<div class="center" style="flex:none;margin-bottom:26px"><button class="play-btn" data-act="play" style="background:${cat.color}">▶️ ${isPlaying?'Sonando…':'Reproducir melodía'}</button><p style="color:rgba(255,255,255,.6);font-size:14px;margin-top:10px">Que suene en un móvil (subid volumen). ¿Qué canción es?</p></div>`
+          : `<h2>${esc(round.question)}</h2>`}
+        <div class="opts">${round.options.map((o,i)=>{const sel=state.selectedOption===i;const bg=answered?(sel?optColors[i]:'rgba(255,255,255,.08)'):optColors[i];const col=answered&&!sel?'rgba(255,255,255,.4)':'#fff';return `<button class="opt" data-answer="${i}" ${answered?'disabled':''} style="background:${bg};color:${col}">${esc(o)}</button>`;}).join('')}</div>
+        ${answered?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600;margin-top:22px">Respuesta enviada, esperando…</p>':''}
+      </div>`;
+      return bind();
+    }
+    if(round.type==='reto'){
+      const submitted=state.submittedResult===meta.currentRound;
+      app.innerHTML=`<div class="screen">
+        ${dotsHTML(meta)}
+        <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} Reto para ${esc(prot.name)}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
+        <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
+        <div class="center" style="flex:1;gap:16px">${avatarHTML(prot,64)}<h2>${esc(round.prompt)}</h2>${!isProt?`<p style="color:rgba(255,255,255,.6);font-weight:600">${cat.hint}</p>`:''}</div>
+        ${isProt&&!submitted?`<div style="display:flex;gap:12px"><button class="btn btn-green" data-res="ok">✅ Conseguido</button><button class="btn btn-red" data-res="no">❌ No sale</button></div>`:(isProt?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Resultado enviado…</p>':'')}
+      </div>`;
+      return bind();
+    }
+    // perform: mimica/cantar/dibujar
+    const submitted=state.submittedResult===meta.currentRound;
+    const others=players.filter(p=>p.id!==round.pid);
+    app.innerHTML=`<div class="screen">
+      ${dotsHTML(meta)}
+      <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} ${cat.label}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
+      <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
+      ${isProt
+        ? `<p style="color:rgba(255,255,255,.6);font-weight:600;margin-bottom:8px">Esto solo lo ves tú:</p>
+           <div class="secret">${esc(round.prompt)}</div>
+           ${submitted?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Resultado enviado…</p>'
+             :`<p style="font-weight:600;margin-bottom:12px">Toca en quién lo adivine primero:</p>
+               <div class="guess-grid">${others.map(p=>`<button data-guess="${p.id}">${avatarHTML(p,32)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span></button>`).join('')}</div>
+               <button class="btn btn-ghost" data-res="no">😅 Nadie lo ha adivinado</button>`}`
+        : `<div class="center" style="flex:1;gap:16px"><div style="font-size:40px">🙈</div><p style="font-weight:700;font-size:20px">¡No mires el móvil de ${esc(prot.name)}!</p>${avatarHTML(prot,72)}<p style="color:rgba(255,255,255,.7);font-weight:600">${cat.hint}</p></div>`}
+    </div>`;
+    return bind();
+  }
+
+  if(meta.sub==='reveal'){
+    const top3=[...players].sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,3);
+    const lr=meta.lastResult||{};
+    let banner='';
+    if(round.type==='trivia'||round.type==='musica'){
+      const my=(lr.deltas&&lr.deltas[state.playerId])||0;
+      banner=`${round.type==='musica'?`<p style="text-align:center;font-weight:700;font-size:18px;margin-bottom:14px">🎵 Era: <span style="color:${cat.color}">${esc(round.song)}</span></p>`:''}
+        <div class="opts" style="margin-bottom:22px">${round.options.map((o,i)=>{const ok=i===round.correct;const mine=state.selectedOption===i;return `<div class="reveal-opt" style="background:${ok?'#26890C':'rgba(255,255,255,.08)'}"><span>${esc(o)}</span>${ok?'✓':(mine?'✗':'')}</div>`;}).join('')}</div>
+        <div class="banner" style="background:${my>0?'#FFA602':'rgba(255,255,255,.08)'}">${my>0?'¡Bien! +'+my+' puntos':'Esta vez no'}</div>`;
+    } else if(round.type==='reto'){
+      banner=`<div class="banner" style="background:${lr.success?'#26890C':'rgba(255,255,255,.08)'}">${lr.success?'✅ ¡'+esc(prot.name)+' lo consigue! +100':'❌ Reto no conseguido'}</div>`;
+    } else {
+      const g=lr.guesserId&&players.find(p=>p.id===lr.guesserId);
+      banner=`<div class="banner" style="background:${lr.success?'#864CBF':'rgba(255,255,255,.08)'}">${lr.success?'🎉 ¡'+esc(g?g.name:'Alguien')+' acierta! +80 / '+esc(prot.name)+' +60':'😅 Nadie lo ha adivinado'}</div>`;
+    }
+    app.innerHTML=`<div class="screen">
+      ${dotsHTML(meta)}
+      <span class="label" style="color:${cat.color}">${cat.icon} ${cat.label}</span>
+      <h2>${round.type==='trivia'?esc(round.question):(round.type==='musica'?'¿Qué canción era?':esc(round.prompt))}</h2>
+      ${banner}
+      <p class="label">🏆 Clasificación</p>
+      <div style="display:flex;flex-direction:column;gap:8px">${top3.map((p,i)=>`<div class="rank-row"><div class="l"><span style="opacity:.6;font-weight:600">${i+1}.</span>${avatarHTML(p,30)}<span style="font-weight:600">${esc(p.name)}</span></div><span style="font-weight:900">${p.score||0}</span></div>`).join('')}</div>
+    </div>`;
+    return bind();
+  }
+}
+
+function renderEnd(meta,isHost,players){
+  const sorted=[...players].sort((a,b)=>(b.score||0)-(a.score||0));
+  const w=sorted[0]||{name:'',avatar:'',color:'#888',score:0};
+  const rest=sorted.slice(3);
+  const order=[sorted[1],sorted[0],sorted[2]];
+  const heights=[100,130,80], pc=['#C0C0C0','#F4B740','#CD7F32'], lbl=['2º','1º','3º'];
+  app.innerHTML=`<div class="screen center">
+    <div style="font-size:40px">👑</div>
+    <p class="label">Ganador</p>
+    <h2 style="font-size:34px">${esc(w.name)}</h2>
+    <div style="font-size:56px;margin-bottom:6px">${w.avatar}</div>
+    <p style="font-weight:900;font-size:24px;color:#F4B740;margin-bottom:24px">${w.score||0} puntos</p>
+    <div class="podium">${order.map((p,i)=>p?`<div class="col">${avatarHTML(p,i===1?56:44)}<div style="font-weight:700;font-size:14px;margin:8px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%">${esc(p.name)}</div><div class="base" style="background:${pc[i]}55;height:${heights[i]}px">${lbl[i]}</div><div style="font-weight:900;margin-top:4px">${p.score||0}</div></div>`:'').join('')}</div>
+    ${rest.length?`<div class="stack" style="margin-bottom:28px">${rest.map((p,i)=>`<div class="rank-row"><div class="l"><span style="opacity:.6;font-weight:600">${i+4}.</span>${avatarHTML(p,28)}<span style="font-weight:600">${esc(p.name)}</span></div><span style="font-weight:900">${p.score||0}</span></div>`).join('')}</div>`:''}
+    <div class="stack">
+      ${isHost?`<button class="btn btn-red" data-act="again">🔄 Jugar otra vez</button>`:`<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">El anfitrión puede empezar otra partida…</p>`}
+      <button class="btn btn-ghost" data-act="leave">Salir al inicio</button>
+    </div>
+  </div>`;
+  bind();
+}
+
+/* ================== eventos ================== */
+function bind(){
+  const nameI=document.getElementById('nameInput');
+  if(nameI) nameI.oninput=e=>{state.name=e.target.value;};
+  const codeI=document.getElementById('codeInput');
+  if(codeI) codeI.oninput=e=>{state.codeInput=e.target.value.replace(/\D/g,'').slice(0,4);};
+
+  app.querySelectorAll('[data-act]').forEach(el=>{
+    el.onclick=()=>{
+      const a=el.getAttribute('data-act');
+      if(a==='go-create'){state.mode='create';state.screen='setup';state.error='';render();}
+      else if(a==='go-join'){state.mode='join';state.screen='setup';state.error='';render();}
+      else if(a==='home'){state.screen='home';state.error='';render();}
+      else if(a==='create'){createRoom();}
+      else if(a==='join'){joinRoom();}
+      else if(a==='start'){startGame();}
+      else if(a==='again'){playAgain();}
+      else if(a==='leave'){leave();}
+      else if(a==='copy'){copyCode();}
+      else if(a==='play'){const r=state.meta.plan[state.meta.currentRound];playMelody(r.melody);}
+    };
+  });
+  app.querySelectorAll('[data-emoji]').forEach(el=>el.onclick=()=>{state.avatar=el.getAttribute('data-emoji');render();});
+  app.querySelectorAll('[data-color]').forEach(el=>el.onclick=()=>{state.color=el.getAttribute('data-color');render();});
+  app.querySelectorAll('[data-answer]').forEach(el=>el.onclick=()=>answer(parseInt(el.getAttribute('data-answer'))));
+  app.querySelectorAll('[data-res]').forEach(el=>el.onclick=()=>{const v=el.getAttribute('data-res');submitResult(v==='ok'?{success:true}:{success:false});});
+  app.querySelectorAll('[data-guess]').forEach(el=>el.onclick=()=>submitResult({success:true,guesserId:el.getAttribute('data-guess')}));
+}
+
+render();
+</script>
+</body>
+</html>
