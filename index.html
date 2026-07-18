@@ -7,11 +7,7 @@
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  body {
-    min-height: 100vh; color: #fff;
-    background: linear-gradient(160deg, #1B1035 0%, #2A1660 55%, #3A1450 100%);
-    background-attachment: fixed;
-  }
+  body { min-height: 100vh; color: #fff; background: linear-gradient(160deg, #1B1035 0%, #2A1660 55%, #3A1450 100%); background-attachment: fixed; }
   #app { max-width: 460px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
   .screen { flex: 1; display: flex; flex-direction: column; padding: 24px; }
   .center { align-items: center; justify-content: center; text-align: center; }
@@ -23,9 +19,7 @@
   .btn { border: none; border-radius: 18px; padding: 18px; font-size: 22px; font-weight: 900; color: #fff; width: 100%; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.3); transition: transform .1s; font-family: inherit; }
   .btn:active { transform: scale(0.96); }
   .btn:disabled { opacity: .45; }
-  .btn-red { background: #E21B3C; }
-  .btn-blue { background: #1368CE; }
-  .btn-green { background: #26890C; }
+  .btn-red { background: #E21B3C; } .btn-blue { background: #1368CE; } .btn-green { background: #26890C; }
   .btn-ghost { background: rgba(255,255,255,0.1); font-size: 17px; padding: 14px; }
   .stack { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 340px; }
   .input { border-radius: 18px; padding: 16px 18px; font-size: 20px; font-weight: 600; width: 100%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: #fff; font-family: inherit; }
@@ -85,13 +79,11 @@ const firebaseConfig = {
   projectId: "fiesta-familiar",
   storageBucket: "fiesta-familiar.firebasestorage.app",
   messagingSenderId: "1079846909024",
-  appId: "1:1079846909024:web:c95faf8e7c18f44bdf7f05",
-  measurementId: "G-Y910GX2RMH"
+  appId: "1:1079846909024:web:c95faf8e7c18f44bdf7f05"
 };
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 
-/* ================== datos ================== */
 const CATS = {
   trivia: { label: 'Preguntas', color: '#1368CE', icon: '❓', hint: 'Responded todos desde vuestro móvil' },
   musica: { label: 'Adivina la melodía', color: '#00B8A9', icon: '🎵', hint: 'Que suene en un móvil y responded todos' },
@@ -184,7 +176,6 @@ const RETO_BANK=['Aguanta un libro en la cabeza 10 segundos','Di "tres tristes t
 
 const INTRO_MS=2600, TRIVIA_MS=20000, MUSIC_MS=25000, PERFORM_MS=60000, RETO_MS=45000, REVEAL_MS=4500;
 
-/* ================== utilidades ================== */
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function genId(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
 function genCode(){return String(Math.floor(1000+Math.random()*9000));}
@@ -214,7 +205,6 @@ function buildPlan(players,hist){
   return{plan:plan.map((r,i)=>({...r,id:i})),history:h};
 }
 
-/* ================== audio ================== */
 let audioCtx=null;
 function playMelody(melody){
   try{
@@ -229,7 +219,6 @@ function playMelody(melody){
   }catch(e){}
 }
 
-/* ================== estado local ================== */
 const state = {
   screen: 'home', mode: 'create',
   name: localStorage.getItem('ff_name')||'',
@@ -240,26 +229,19 @@ const state = {
   selectedOption: null, answeredRound: -1, submittedResult: -1,
   playingUntil: 0, copied: false,
 };
-let roomUnsub = null;
-let hostTimer = null;
-
+let roomUnsub = null, hostTimer = null;
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-/* ================== Firebase refs ================== */
 const roomRef = c => ref(db, 'rooms/'+c);
 const metaRef = c => ref(db, 'rooms/'+c+'/meta');
 const playerRef = (c,pid) => ref(db, 'rooms/'+c+'/players/'+pid);
-const ansRef = (c,g,r,pid) => ref(db, 'rooms/'+c+'/g'+g+'/ans/'+r+'/'+pid);
 const resRef = (c,g,r) => ref(db, 'rooms/'+c+'/g'+g+'/res/'+r);
 
-/* ================== acciones ================== */
 async function createRoom(){
   if(!state.name.trim()){state.error='Escribe tu nombre';render();return;}
   saveProfile(); state.busy=true; state.error=''; render();
   const code=genCode();
-  const meta={code,hostId:state.playerId,phase:'lobby',gameId:1,
-    history:{mimica:[],cantar:[],dibujar:[],reto:[],trivia:[],musica:[]},
-    currentRound:0,totalRounds:0,sub:null,introAt:null,activeAt:null,revealAt:null,lastResult:null,plan:null,createdAt:Date.now()};
+  const meta={code,hostId:state.playerId,phase:'lobby',gameId:1,history:{mimica:[],cantar:[],dibujar:[],reto:[],trivia:[],musica:[]},currentRound:0,totalRounds:0,sub:null,introAt:null,activeAt:null,revealAt:null,lastResult:null,plan:null,createdAt:Date.now()};
   await set(metaRef(code), meta);
   await set(playerRef(code,state.playerId), {id:state.playerId,name:state.name.trim(),avatar:state.avatar,color:state.color,score:0,joinedAt:Date.now()});
   onDisconnect(playerRef(code,state.playerId)).remove();
@@ -280,7 +262,6 @@ function playersArr(meta){
   const src = (meta && meta.players) ? meta.players : (state.lobbyPlayers || {});
   return Object.values(src).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
 }
-
 async function startGame(){
   const meta=state.meta; if(!meta)return;
   const players=playersArr(meta);
@@ -300,7 +281,7 @@ async function playAgain(){
 async function answer(i){
   const meta=state.meta; if(!meta||meta.sub!=='active'||state.answeredRound===meta.currentRound)return;
   state.selectedOption=i; state.answeredRound=meta.currentRound; render();
-  await set(ansRef(state.roomCode,meta.gameId||1,meta.currentRound,state.playerId), {o:i,at:Date.now()});
+  await set(ref(db,'rooms/'+state.roomCode+'/g'+(meta.gameId||1)+'/ans/'+meta.currentRound+'/'+state.playerId), {o:i,at:Date.now()});
 }
 async function submitResult(payload){
   const meta=state.meta; if(!meta||state.submittedResult===meta.currentRound)return;
@@ -311,17 +292,12 @@ function leave(){
   if(roomUnsub){roomUnsub();roomUnsub=null;}
   if(hostTimer){clearInterval(hostTimer);hostTimer=null;}
   if(state.roomCode) remove(playerRef(state.roomCode,state.playerId)).catch(()=>{});
-  state.screen='home'; state.roomCode=null; state.meta=null; state.selectedOption=null;
+  state.screen='home'; state.roomCode=null; state.meta=null; state.lobbyPlayers={}; state.selectedOption=null;
   state.answeredRound=-1; state.submittedResult=-1; state.error=''; render();
 }
-function saveProfile(){
-  localStorage.setItem('ff_name',state.name.trim());
-  localStorage.setItem('ff_avatar',state.avatar);
-  localStorage.setItem('ff_color',state.color);
-}
+function saveProfile(){ localStorage.setItem('ff_name',state.name.trim()); localStorage.setItem('ff_avatar',state.avatar); localStorage.setItem('ff_color',state.color); }
 function copyCode(){ try{navigator.clipboard.writeText(state.roomCode);state.copied=true;render();setTimeout(()=>{state.copied=false;render();},1500);}catch(e){} }
 
-/* ================== bucle del anfitrión (avanza la partida) ================== */
 function subscribeRoom(code){
   if(roomUnsub)roomUnsub();
   roomUnsub = onValue(roomRef(code), snap=>{
@@ -335,7 +311,7 @@ function subscribeRoom(code){
 }
 async function hostTick(){
   const meta=state.meta;
-  if(!meta||meta.hostId!==state.playerId)return; // solo el anfitrión hace avanzar el juego
+  if(!meta||meta.hostId!==state.playerId)return;
   if(meta.phase!=='round')return;
   const round=meta.plan[meta.currentRound];
   const t=Date.now();
@@ -382,202 +358,97 @@ async function hostTick(){
   }
 }
 
-/* ================== reloj para animar barra ================== */
 setInterval(()=>{ if(state.screen==='room'&&state.meta&&(state.meta.sub==='active'||state.playingUntil>Date.now())) render(); }, 300);
 
-/* ================== render (HTML) ================== */
 const app = document.getElementById('app');
-
-function avatarHTML(p,size){ return `<div class="avatar" style="width:${size}px;height:${size}px;background:${p.color};font-size:${Math.round(size*0.55)}px">${p.avatar}</div>`; }
+function avatarHTML(p,size){ return '<div class="avatar" style="width:'+size+'px;height:'+size+'px;background:'+p.color+';font-size:'+Math.round(size*0.55)+'px">'+p.avatar+'</div>'; }
 
 function render(){
   const s=state;
   if(s.screen==='home'){
-    app.innerHTML=`<div class="screen center">
-      <div style="font-size:26px;margin-bottom:12px">🎵🎭🎤🎨🔥❓</div>
-      <h1>Fiesta Familiar</h1>
-      <p class="sub">Preguntas, melodías, mímica, canciones, dibujos y retos. Todas las edades, un móvil cada uno.</p>
-      <div class="stack">
-        <button class="btn btn-red" data-act="go-create">Crear partida</button>
-        <button class="btn btn-blue" data-act="go-join">Unirse a partida</button>
-      </div>
-      <p class="tiny">Tened a mano papel y boli para dibujar 🎨. Funciona en cualquier móvil, sin instalar nada.</p>
-    </div>`;
+    app.innerHTML='<div class="screen center"><div style="font-size:26px;margin-bottom:12px">🎵🎭🎤🎨🔥❓</div><h1>Fiesta Familiar</h1><p class="sub">Preguntas, melodías, mímica, canciones, dibujos y retos. Todas las edades, un móvil cada uno.</p><div class="stack"><button class="btn btn-red" data-act="go-create">Crear partida</button><button class="btn btn-blue" data-act="go-join">Unirse a partida</button></div><p class="tiny">Tened a mano papel y boli para dibujar 🎨. Funciona en cualquier móvil, sin instalar nada.</p></div>';
     return bind();
   }
   if(s.screen==='setup'){
     const isC=s.mode==='create';
-    app.innerHTML=`<div class="screen">
-      <button class="back" data-act="home">← Volver</button>
-      <div class="center" style="flex:none"><h2>${isC?'Crear partida':'Unirse a partida'}</h2></div>
-      <div class="stack" style="margin:0 auto">
-        <div class="center" style="flex:none">
-          ${avatarHTML(s,72)}
-          <div class="emoji-grid">${AVATAR_EMOJIS.map(e=>`<button data-emoji="${e}" class="${s.avatar===e?'sel':''}">${e}</button>`).join('')}</div>
-          <div class="color-row">${AVATAR_COLORS.map(c=>`<button data-color="${c}" class="${s.color===c?'sel':''}" style="background:${c}"></button>`).join('')}</div>
-        </div>
-        ${isC?'':`<input class="input code-input" id="codeInput" inputmode="numeric" maxlength="4" placeholder="0000" value="${esc(s.codeInput)}">`}
-        <input class="input" id="nameInput" placeholder="Tu nombre" value="${esc(s.name)}">
-        ${s.error?`<p class="err">${esc(s.error)}</p>`:''}
-        <button class="btn ${isC?'btn-red':'btn-blue'}" data-act="${isC?'create':'join'}" ${s.busy?'disabled':''}>${s.busy?'Un momento…':(isC?'Crear sala':'Unirme')}</button>
-      </div>
-    </div>`;
+    app.innerHTML='<div class="screen"><button class="back" data-act="home">← Volver</button><div class="center" style="flex:none"><h2>'+(isC?'Crear partida':'Unirse a partida')+'</h2></div><div class="stack" style="margin:0 auto"><div class="center" style="flex:none">'+avatarHTML(s,72)+'<div class="emoji-grid">'+AVATAR_EMOJIS.map(e=>'<button data-emoji="'+e+'" class="'+(s.avatar===e?'sel':'')+'">'+e+'</button>').join('')+'</div><div class="color-row">'+AVATAR_COLORS.map(c=>'<button data-color="'+c+'" class="'+(s.color===c?'sel':'')+'" style="background:'+c+'"></button>').join('')+'</div></div>'+(isC?'':'<input class="input code-input" id="codeInput" inputmode="numeric" maxlength="4" placeholder="0000" value="'+esc(s.codeInput)+'">')+'<input class="input" id="nameInput" placeholder="Tu nombre" value="'+esc(s.name)+'">'+(s.error?'<p class="err">'+esc(s.error)+'</p>':'')+'<button class="btn '+(isC?'btn-red':'btn-blue')+'" data-act="'+(isC?'create':'join')+'" '+(s.busy?'disabled':'')+'>'+(s.busy?'Un momento…':(isC?'Crear sala':'Unirme'))+'</button></div></div>';
     return bind();
   }
   if(s.screen==='room'){
-    if(!s.meta){ app.innerHTML=`<div class="screen"><p class="loading">Conectando con la sala…</p></div>`; return bind(); }
+    if(!s.meta){ app.innerHTML='<div class="screen"><p class="loading">Conectando con la sala…</p></div>'; return bind(); }
     const meta=s.meta, isHost=meta.hostId===s.playerId, players=playersArr(meta);
     if(meta.phase==='lobby') return renderLobby(meta,isHost,players);
     if(meta.phase==='end') return renderEnd(meta,isHost,players);
     return renderRound(meta,isHost,players);
   }
 }
-
 function renderLobby(meta,isHost,players){
-  app.innerHTML=`<div class="screen center">
-    <button class="back" data-act="leave">← Salir</button>
-    <p class="label">Código de la sala</p>
-    <div class="code-box" data-act="copy"><span>${meta.code}</span><span style="font-size:16px">${state.copied?'✓':'📋'}</span></div>
-    <div class="tags">${Object.values(CATS).map(c=>`<span class="tag" style="background:${c.color}33">${c.icon} ${c.label}</span>`).join('')}</div>
-    <div style="width:100%;max-width:340px">
-      <p class="label" style="text-align:left">👥 ${players.length} en la sala</p>
-      <div class="players-grid">${players.map(p=>`<div class="card">${avatarHTML(p,36)}<span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}${p.id===meta.hostId?' 👑':''}</span></div>`).join('')}</div>
-      ${isHost
-        ? `<button class="btn btn-red" data-act="start" ${players.length<2?'disabled':''}>${players.length<2?'Necesitáis 2 jugadores':'Iniciar partida'}</button>`
-        : `<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Esperando a que el anfitrión inicie…</p>`}
-    </div>
-    <p class="conn">Comparte el código o el enlace de esta página con los demás.</p>
-  </div>`;
+  app.innerHTML='<div class="screen center"><button class="back" data-act="leave">← Salir</button><p class="label">Código de la sala</p><div class="code-box" data-act="copy"><span>'+meta.code+'</span><span style="font-size:16px">'+(state.copied?'✓':'📋')+'</span></div><div class="tags">'+Object.values(CATS).map(c=>'<span class="tag" style="background:'+c.color+'33">'+c.icon+' '+c.label+'</span>').join('')+'</div><div style="width:100%;max-width:340px"><p class="label" style="text-align:left">👥 '+players.length+' EN LA SALA</p><div class="players-grid">'+players.map(p=>'<div class="card">'+avatarHTML(p,36)+'<span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+(p.id===meta.hostId?' 👑':'')+'</span></div>').join('')+'</div>'+(isHost?'<button class="btn btn-red" data-act="start" '+(players.length<2?'disabled':'')+'>'+(players.length<2?'Necesitáis 2 jugadores':'Iniciar partida')+'</button>':'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Esperando a que el anfitrión inicie…</p>')+'</div><p class="conn">Comparte el código o el enlace de esta página con los demás.</p></div>';
   bind();
 }
-
-function dotsHTML(meta){ return `<div class="dots">${meta.plan.map((r,i)=>`<div style="background:${i<meta.currentRound?CATS[r.type].color:(i===meta.currentRound?'rgba(255,255,255,.5)':'rgba(255,255,255,.12)')}"></div>`).join('')}</div>`; }
-
+function dotsHTML(meta){ return '<div class="dots">'+meta.plan.map((r,i)=>'<div style="background:'+(i<meta.currentRound?CATS[r.type].color:(i===meta.currentRound?'rgba(255,255,255,.5)':'rgba(255,255,255,.12)'))+'"></div>').join('')+'</div>'; }
 function renderRound(meta,isHost,players){
   const round=meta.plan[meta.currentRound], cat=CATS[round.type];
   const isPerf=round.type!=='trivia'&&round.type!=='musica';
   const isProt=isPerf&&round.pid===state.playerId;
   const prot=isPerf?players.find(p=>p.id===round.pid):null;
-
   if(meta.sub==='intro'){
-    app.innerHTML=`<div class="screen center">
-      <div style="width:100%;max-width:340px">${dotsHTML(meta)}</div>
-      <div style="font-size:64px;margin-bottom:12px">${cat.icon}</div>
-      <p class="label" style="color:${cat.color}">Ronda ${meta.currentRound+1} de ${meta.totalRounds}</p>
-      <h2>${cat.label}</h2>
-      ${prot?`${avatarHTML(prot,64)}<p style="font-size:20px;font-weight:700;margin-top:8px">Le toca a ${esc(prot.name)}</p>`:`<p style="font-size:20px;font-weight:700;color:rgba(255,255,255,.7)">¡Preparaos todos!</p>`}
-    </div>`;
+    app.innerHTML='<div class="screen center"><div style="width:100%;max-width:340px">'+dotsHTML(meta)+'</div><div style="font-size:64px;margin-bottom:12px">'+cat.icon+'</div><p class="label" style="color:'+cat.color+'">Ronda '+(meta.currentRound+1)+' de '+meta.totalRounds+'</p><h2>'+cat.label+'</h2>'+(prot?avatarHTML(prot,64)+'<p style="font-size:20px;font-weight:700;margin-top:8px">Le toca a '+esc(prot.name)+'</p>':'<p style="font-size:20px;font-weight:700;color:rgba(255,255,255,.7)">¡Preparaos todos!</p>')+'</div>';
     return bind();
   }
-
   if(meta.sub==='active'){
     const dur=round.type==='trivia'?TRIVIA_MS:round.type==='musica'?MUSIC_MS:round.type==='reto'?RETO_MS:PERFORM_MS;
     const rem=Math.max(0,dur-(Date.now()-(meta.activeAt||Date.now())));
     const pct=Math.max(0,Math.min(100,rem/dur*100));
     const secs=Math.ceil(rem/1000);
     const optColors=['#E21B3C','#1368CE','#FFA602','#26890C'];
-
+    const answered=state.answeredRound===meta.currentRound;
     if(round.type==='trivia'||round.type==='musica'){
-      const answered=state.answeredRound===meta.currentRound;
       const isPlaying=Date.now()<state.playingUntil;
-      app.innerHTML=`<div class="screen">
-        ${dotsHTML(meta)}
-        <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} ${round.type==='trivia'?esc(round.category):cat.label}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
-        <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
-        ${round.type==='musica'
-          ? `<div class="center" style="flex:none;margin-bottom:26px"><button class="play-btn" data-act="play" style="background:${cat.color}">▶️ ${isPlaying?'Sonando…':'Reproducir melodía'}</button><p style="color:rgba(255,255,255,.6);font-size:14px;margin-top:10px">Que suene en un móvil (subid volumen). ¿Qué canción es?</p></div>`
-          : `<h2>${esc(round.question)}</h2>`}
-        <div class="opts">${round.options.map((o,i)=>{const sel=state.selectedOption===i;const bg=answered?(sel?optColors[i]:'rgba(255,255,255,.08)'):optColors[i];const col=answered&&!sel?'rgba(255,255,255,.4)':'#fff';return `<button class="opt" data-answer="${i}" ${answered?'disabled':''} style="background:${bg};color:${col}">${esc(o)}</button>`;}).join('')}</div>
-        ${answered?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600;margin-top:22px">Respuesta enviada, esperando…</p>':''}
-      </div>`;
+      app.innerHTML='<div class="screen">'+dotsHTML(meta)+'<div class="row-between"><span class="label" style="margin:0;color:'+cat.color+'">'+cat.icon+' '+(round.type==='trivia'?esc(round.category):cat.label)+'</span><span style="font-weight:600;color:rgba(255,255,255,.6)">'+secs+'s</span></div><div class="bar"><div style="width:'+pct+'%;background:'+cat.color+'"></div></div>'+(round.type==='musica'?'<div class="center" style="flex:none;margin-bottom:26px"><button class="play-btn" data-act="play" style="background:'+cat.color+'">▶️ '+(isPlaying?'Sonando…':'Reproducir melodía')+'</button><p style="color:rgba(255,255,255,.6);font-size:14px;margin-top:10px">Que suene en un móvil (subid volumen). ¿Qué canción es?</p></div>':'<h2>'+esc(round.question)+'</h2>')+'<div class="opts">'+round.options.map((o,i)=>{const sel=state.selectedOption===i;const bg=answered?(sel?optColors[i]:'rgba(255,255,255,.08)'):optColors[i];const col=answered&&!sel?'rgba(255,255,255,.4)':'#fff';return '<button class="opt" data-answer="'+i+'" '+(answered?'disabled':'')+' style="background:'+bg+';color:'+col+'">'+esc(o)+'</button>';}).join('')+'</div>'+(answered?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600;margin-top:22px">Respuesta enviada, esperando…</p>':'')+'</div>';
       return bind();
     }
     if(round.type==='reto'){
       const submitted=state.submittedResult===meta.currentRound;
-      app.innerHTML=`<div class="screen">
-        ${dotsHTML(meta)}
-        <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} Reto para ${esc(prot.name)}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
-        <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
-        <div class="center" style="flex:1;gap:16px">${avatarHTML(prot,64)}<h2>${esc(round.prompt)}</h2>${!isProt?`<p style="color:rgba(255,255,255,.6);font-weight:600">${cat.hint}</p>`:''}</div>
-        ${isProt&&!submitted?`<div style="display:flex;gap:12px"><button class="btn btn-green" data-res="ok">✅ Conseguido</button><button class="btn btn-red" data-res="no">❌ No sale</button></div>`:(isProt?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Resultado enviado…</p>':'')}
-      </div>`;
+      app.innerHTML='<div class="screen">'+dotsHTML(meta)+'<div class="row-between"><span class="label" style="margin:0;color:'+cat.color+'">'+cat.icon+' Reto para '+esc(prot.name)+'</span><span style="font-weight:600;color:rgba(255,255,255,.6)">'+secs+'s</span></div><div class="bar"><div style="width:'+pct+'%;background:'+cat.color+'"></div></div><div class="center" style="flex:1;gap:16px">'+avatarHTML(prot,64)+'<h2>'+esc(round.prompt)+'</h2>'+(!isProt?'<p style="color:rgba(255,255,255,.6);font-weight:600">'+cat.hint+'</p>':'')+'</div>'+(isProt&&!submitted?'<div style="display:flex;gap:12px"><button class="btn btn-green" data-res="ok">✅ Conseguido</button><button class="btn btn-red" data-res="no">❌ No sale</button></div>':(isProt?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Resultado enviado…</p>':''))+'</div>';
       return bind();
     }
-    // perform: mimica/cantar/dibujar
     const submitted=state.submittedResult===meta.currentRound;
     const others=players.filter(p=>p.id!==round.pid);
-    app.innerHTML=`<div class="screen">
-      ${dotsHTML(meta)}
-      <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} ${cat.label}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
-      <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
-      ${isProt
-        ? `<p style="color:rgba(255,255,255,.6);font-weight:600;margin-bottom:8px">Esto solo lo ves tú:</p>
-           <div class="secret">${esc(round.prompt)}</div>
-           ${submitted?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Resultado enviado…</p>'
-             :`<p style="font-weight:600;margin-bottom:12px">Toca en quién lo adivine primero:</p>
-               <div class="guess-grid">${others.map(p=>`<button data-guess="${p.id}">${avatarHTML(p,32)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span></button>`).join('')}</div>
-               <button class="btn btn-ghost" data-res="no">😅 Nadie lo ha adivinado</button>`}`
-        : `<div class="center" style="flex:1;gap:16px"><div style="font-size:40px">🙈</div><p style="font-weight:700;font-size:20px">¡No mires el móvil de ${esc(prot.name)}!</p>${avatarHTML(prot,72)}<p style="color:rgba(255,255,255,.7);font-weight:600">${cat.hint}</p></div>`}
-    </div>`;
+    app.innerHTML='<div class="screen">'+dotsHTML(meta)+'<div class="row-between"><span class="label" style="margin:0;color:'+cat.color+'">'+cat.icon+' '+cat.label+'</span><span style="font-weight:600;color:rgba(255,255,255,.6)">'+secs+'s</span></div><div class="bar"><div style="width:'+pct+'%;background:'+cat.color+'"></div></div>'+(isProt?'<p style="color:rgba(255,255,255,.6);font-weight:600;margin-bottom:8px">Esto solo lo ves tú:</p><div class="secret">'+esc(round.prompt)+'</div>'+(submitted?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Resultado enviado…</p>':'<p style="font-weight:600;margin-bottom:12px">Toca en quién lo adivine primero:</p><div class="guess-grid">'+others.map(p=>'<button data-guess="'+p.id+'">'+avatarHTML(p,32)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+'</span></button>').join('')+'</div><button class="btn btn-ghost" data-res="no">😅 Nadie lo ha adivinado</button>'):'<div class="center" style="flex:1;gap:16px"><div style="font-size:40px">🙈</div><p style="font-weight:700;font-size:20px">¡No mires el móvil de '+esc(prot.name)+'!</p>'+avatarHTML(prot,72)+'<p style="color:rgba(255,255,255,.7);font-weight:600">'+cat.hint+'</p></div>')+'</div>';
     return bind();
   }
-
   if(meta.sub==='reveal'){
     const top3=[...players].sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,3);
     const lr=meta.lastResult||{};
     let banner='';
     if(round.type==='trivia'||round.type==='musica'){
       const my=(lr.deltas&&lr.deltas[state.playerId])||0;
-      banner=`${round.type==='musica'?`<p style="text-align:center;font-weight:700;font-size:18px;margin-bottom:14px">🎵 Era: <span style="color:${cat.color}">${esc(round.song)}</span></p>`:''}
-        <div class="opts" style="margin-bottom:22px">${round.options.map((o,i)=>{const ok=i===round.correct;const mine=state.selectedOption===i;return `<div class="reveal-opt" style="background:${ok?'#26890C':'rgba(255,255,255,.08)'}"><span>${esc(o)}</span>${ok?'✓':(mine?'✗':'')}</div>`;}).join('')}</div>
-        <div class="banner" style="background:${my>0?'#FFA602':'rgba(255,255,255,.08)'}">${my>0?'¡Bien! +'+my+' puntos':'Esta vez no'}</div>`;
+      banner=(round.type==='musica'?'<p style="text-align:center;font-weight:700;font-size:18px;margin-bottom:14px">🎵 Era: <span style="color:'+cat.color+'">'+esc(round.song)+'</span></p>':'')+'<div class="opts" style="margin-bottom:22px">'+round.options.map((o,i)=>{const ok=i===round.correct;const mine=state.selectedOption===i;return '<div class="reveal-opt" style="background:'+(ok?'#26890C':'rgba(255,255,255,.08)')+'"><span>'+esc(o)+'</span>'+(ok?'✓':(mine?'✗':''))+'</div>';}).join('')+'</div><div class="banner" style="background:'+(my>0?'#FFA602':'rgba(255,255,255,.08)')+'">'+(my>0?'¡Bien! +'+my+' puntos':'Esta vez no')+'</div>';
     } else if(round.type==='reto'){
-      banner=`<div class="banner" style="background:${lr.success?'#26890C':'rgba(255,255,255,.08)'}">${lr.success?'✅ ¡'+esc(prot.name)+' lo consigue! +100':'❌ Reto no conseguido'}</div>`;
+      banner='<div class="banner" style="background:'+(lr.success?'#26890C':'rgba(255,255,255,.08)')+'">'+(lr.success?'✅ ¡'+esc(prot.name)+' lo consigue! +100':'❌ Reto no conseguido')+'</div>';
     } else {
       const g=lr.guesserId&&players.find(p=>p.id===lr.guesserId);
-      banner=`<div class="banner" style="background:${lr.success?'#864CBF':'rgba(255,255,255,.08)'}">${lr.success?'🎉 ¡'+esc(g?g.name:'Alguien')+' acierta! +80 / '+esc(prot.name)+' +60':'😅 Nadie lo ha adivinado'}</div>`;
+      banner='<div class="banner" style="background:'+(lr.success?'#864CBF':'rgba(255,255,255,.08)')+'">'+(lr.success?'🎉 ¡'+esc(g?g.name:'Alguien')+' acierta! +80 / '+esc(prot.name)+' +60':'😅 Nadie lo ha adivinado')+'</div>';
     }
-    app.innerHTML=`<div class="screen">
-      ${dotsHTML(meta)}
-      <span class="label" style="color:${cat.color}">${cat.icon} ${cat.label}</span>
-      <h2>${round.type==='trivia'?esc(round.question):(round.type==='musica'?'¿Qué canción era?':esc(round.prompt))}</h2>
-      ${banner}
-      <p class="label">🏆 Clasificación</p>
-      <div style="display:flex;flex-direction:column;gap:8px">${top3.map((p,i)=>`<div class="rank-row"><div class="l"><span style="opacity:.6;font-weight:600">${i+1}.</span>${avatarHTML(p,30)}<span style="font-weight:600">${esc(p.name)}</span></div><span style="font-weight:900">${p.score||0}</span></div>`).join('')}</div>
-    </div>`;
+    app.innerHTML='<div class="screen">'+dotsHTML(meta)+'<span class="label" style="color:'+cat.color+'">'+cat.icon+' '+cat.label+'</span><h2>'+(round.type==='trivia'?esc(round.question):(round.type==='musica'?'¿Qué canción era?':esc(round.prompt)))+'</h2>'+banner+'<p class="label">🏆 Clasificación</p><div style="display:flex;flex-direction:column;gap:8px">'+top3.map((p,i)=>'<div class="rank-row"><div class="l"><span style="opacity:.6;font-weight:600">'+(i+1)+'.</span>'+avatarHTML(p,30)+'<span style="font-weight:600">'+esc(p.name)+'</span></div><span style="font-weight:900">'+(p.score||0)+'</span></div>').join('')+'</div></div>';
     return bind();
   }
 }
-
 function renderEnd(meta,isHost,players){
   const sorted=[...players].sort((a,b)=>(b.score||0)-(a.score||0));
   const w=sorted[0]||{name:'',avatar:'',color:'#888',score:0};
   const rest=sorted.slice(3);
   const order=[sorted[1],sorted[0],sorted[2]];
   const heights=[100,130,80], pc=['#C0C0C0','#F4B740','#CD7F32'], lbl=['2º','1º','3º'];
-  app.innerHTML=`<div class="screen center">
-    <div style="font-size:40px">👑</div>
-    <p class="label">Ganador</p>
-    <h2 style="font-size:34px">${esc(w.name)}</h2>
-    <div style="font-size:56px;margin-bottom:6px">${w.avatar}</div>
-    <p style="font-weight:900;font-size:24px;color:#F4B740;margin-bottom:24px">${w.score||0} puntos</p>
-    <div class="podium">${order.map((p,i)=>p?`<div class="col">${avatarHTML(p,i===1?56:44)}<div style="font-weight:700;font-size:14px;margin:8px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%">${esc(p.name)}</div><div class="base" style="background:${pc[i]}55;height:${heights[i]}px">${lbl[i]}</div><div style="font-weight:900;margin-top:4px">${p.score||0}</div></div>`:'').join('')}</div>
-    ${rest.length?`<div class="stack" style="margin-bottom:28px">${rest.map((p,i)=>`<div class="rank-row"><div class="l"><span style="opacity:.6;font-weight:600">${i+4}.</span>${avatarHTML(p,28)}<span style="font-weight:600">${esc(p.name)}</span></div><span style="font-weight:900">${p.score||0}</span></div>`).join('')}</div>`:''}
-    <div class="stack">
-      ${isHost?`<button class="btn btn-red" data-act="again">🔄 Jugar otra vez</button>`:`<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">El anfitrión puede empezar otra partida…</p>`}
-      <button class="btn btn-ghost" data-act="leave">Salir al inicio</button>
-    </div>
-  </div>`;
+  app.innerHTML='<div class="screen center"><div style="font-size:40px">👑</div><p class="label">Ganador</p><h2 style="font-size:34px">'+esc(w.name)+'</h2><div style="font-size:56px;margin-bottom:6px">'+w.avatar+'</div><p style="font-weight:900;font-size:24px;color:#F4B740;margin-bottom:24px">'+(w.score||0)+' puntos</p><div class="podium">'+order.map((p,i)=>p?'<div class="col">'+avatarHTML(p,i===1?56:44)+'<div style="font-weight:700;font-size:14px;margin:8px 0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%">'+esc(p.name)+'</div><div class="base" style="background:'+pc[i]+'55;height:'+heights[i]+'px">'+lbl[i]+'</div><div style="font-weight:900;margin-top:4px">'+(p.score||0)+'</div></div>':'').join('')+'</div>'+(rest.length?'<div class="stack" style="margin-bottom:28px">'+rest.map((p,i)=>'<div class="rank-row"><div class="l"><span style="opacity:.6;font-weight:600">'+(i+4)+'.</span>'+avatarHTML(p,28)+'<span style="font-weight:600">'+esc(p.name)+'</span></div><span style="font-weight:900">'+(p.score||0)+'</span></div>').join('')+'</div>':'')+'<div class="stack">'+(isHost?'<button class="btn btn-red" data-act="again">🔄 Jugar otra vez</button>':'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">El anfitrión puede empezar otra partida…</p>')+'<button class="btn btn-ghost" data-act="leave">Salir al inicio</button></div></div>';
   bind();
 }
-
-/* ================== eventos ================== */
 function bind(){
   const nameI=document.getElementById('nameInput');
   if(nameI) nameI.oninput=e=>{state.name=e.target.value;};
   const codeI=document.getElementById('codeInput');
   if(codeI) codeI.oninput=e=>{state.codeInput=e.target.value.replace(/\D/g,'').slice(0,4);};
-
   app.querySelectorAll('[data-act]').forEach(el=>{
     el.onclick=()=>{
       const a=el.getAttribute('data-act');
@@ -599,7 +470,6 @@ function bind(){
   app.querySelectorAll('[data-res]').forEach(el=>el.onclick=()=>{const v=el.getAttribute('data-res');submitResult(v==='ok'?{success:true}:{success:false});});
   app.querySelectorAll('[data-guess]').forEach(el=>el.onclick=()=>submitResult({success:true,guesserId:el.getAttribute('data-guess')}));
 }
-
 render();
 </script>
 </body>
