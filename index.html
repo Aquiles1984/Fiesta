@@ -236,7 +236,7 @@ const state = {
   avatar: localStorage.getItem('ff_avatar')||AVATAR_EMOJIS[0],
   color: localStorage.getItem('ff_color')||AVATAR_COLORS[0],
   codeInput: '', roomCode: null, playerId: genId(),
-  meta: null, error: '', busy: false,
+  meta: null, error: '', busy: false, lobbyPlayers: {},
   selectedOption: null, answeredRound: -1, submittedResult: -1,
   playingUntil: 0, copied: false,
 };
@@ -276,13 +276,18 @@ async function joinRoom(){
   onDisconnect(playerRef(code,state.playerId)).remove();
   state.roomCode=code; state.busy=false; state.screen='room'; subscribeRoom(code); render();
 }
-function playersArr(meta){ const p=meta&&meta.players?Object.values(meta.players):[]; return p.sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)); }
+function playersArr(meta){
+  const src = (meta && meta.players) ? meta.players : (state.lobbyPlayers || {});
+  return Object.values(src).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
+}
 
 async function startGame(){
   const meta=state.meta; if(!meta)return;
   const players=playersArr(meta);
+  if(players.length<2)return;
   const {plan,history}=buildPlan(players,meta.history);
-  await update(metaRef(state.roomCode), {phase:'round',history,plan,currentRound:0,totalRounds:plan.length,sub:'intro',introAt:Date.now(),lastResult:null});
+  const playersObj={}; players.forEach(p=>playersObj[p.id]={...p,score:0});
+  await update(metaRef(state.roomCode), {players:playersObj,phase:'round',history,plan,currentRound:0,totalRounds:plan.length,sub:'intro',introAt:Date.now(),lastResult:null});
 }
 async function playAgain(){
   const meta=state.meta; if(!meta)return;
@@ -319,8 +324,10 @@ function copyCode(){ try{navigator.clipboard.writeText(state.roomCode);state.cop
 /* ================== bucle del anfitrión (avanza la partida) ================== */
 function subscribeRoom(code){
   if(roomUnsub)roomUnsub();
-  roomUnsub = onValue(metaRef(code), snap=>{
-    state.meta = snap.val();
+  roomUnsub = onValue(roomRef(code), snap=>{
+    const room = snap.val() || {};
+    state.meta = room.meta || null;
+    state.lobbyPlayers = room.players || {};
     render();
   });
   if(hostTimer)clearInterval(hostTimer);
@@ -340,7 +347,7 @@ async function hostTick(){
   if(meta.sub==='active'){
     const players=playersArr(meta);
     if(isQuiz){
-      const snap=await get(ansRef(state.roomCode,meta.gameId||1,meta.currentRound,'').parent||ref(db,'rooms/'+state.roomCode+'/g'+(meta.gameId||1)+'/ans/'+meta.currentRound));
+      const snap=await get(ref(db,'rooms/'+state.roomCode+'/g'+(meta.gameId||1)+'/ans/'+meta.currentRound));
       const ans=snap.exists()?snap.val():{};
       const list=Object.keys(ans).map(pid=>({pid,...ans[pid]}));
       const allAns=players.length>0 && list.length>=players.length;
