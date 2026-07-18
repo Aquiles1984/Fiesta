@@ -43,9 +43,9 @@
   .input:focus { outline: none; border-color: #7FE8DC; background: rgba(255,255,255,0.1); }
   .code-input { text-align: center; font-family: 'Space Grotesk',sans-serif; font-size: 34px; font-weight: 700; letter-spacing: 10px; }
   .back { background: none; border: none; color: rgba(242,239,250,0.65); font-size: 14px; font-weight: 600; cursor: pointer; align-self: flex-start; margin-bottom: 14px; padding: 6px 0; font-family: inherit; display: flex; align-items: center; gap: 4px; }
-  .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 2.5px rgba(255,255,255,0.3), 0 4px 14px rgba(0,0,0,0.35); }
-  .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 14px 0; }
-  .emoji-grid button { width: 32px; height: 32px; border-radius: 50%; font-size: 17px; background: transparent; border: 2px solid transparent; cursor: pointer; transition: all .12s; }
+  .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; box-shadow: 0 0 0 2.5px rgba(255,255,255,0.3), 0 4px 14px rgba(0,0,0,0.35), inset 0 -4px 8px rgba(0,0,0,0.18), inset 0 3px 6px rgba(255,255,255,0.35); }
+  .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; margin: 14px 0; }
+  .emoji-grid button { width: 38px; height: 38px; border-radius: 50%; font-size: 20px; background: rgba(255,255,255,0.04); border: 2px solid transparent; cursor: pointer; transition: all .12s; }
   .emoji-grid button.sel { background: rgba(255,255,255,0.18); border-color: #7FE8DC; transform: scale(1.12); }
   .color-row { display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; }
   .color-row button { width: 26px; height: 26px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
@@ -105,7 +105,6 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 
-/* ================== datos ================== */
 const CATS = {
   trivia: { label: 'Preguntas', color: '#1368CE', icon: '❓', hint: 'Responded todos desde vuestro móvil' },
   musica: { label: 'Adivina la melodía', color: '#00B8A9', icon: '🎵', hint: 'Que suene en un móvil y responded todos' },
@@ -114,7 +113,7 @@ const CATS = {
   dibujar: { label: 'Dibuja', color: '#FF6D3F', icon: '🎨', hint: 'Adivinad qué dibuja en un papel' },
   reto: { label: 'Reto', color: '#26890C', icon: '🔥', hint: 'Juzgad entre todos si lo consigue' },
 };
-const AVATAR_EMOJIS = ['🦁','🐯','🐨','🦊','🐸','🐵','🦄','🐙','🐧','🐶','🐱','🦉','🐢','🦋','🐔','🐷'];
+const AVATAR_EMOJIS = ['😎','🤠','🥷','🧑‍🚀','🦸','🧙','🤖','👽','🧛','🎅','🦁','🐯','🐨','🦊','🐸','🐵','🦄','🐙','🦉','🐧','🐶','🐱','🦋','🐢'];
 const AVATAR_COLORS = ['#E21B3C','#1368CE','#FFA602','#26890C','#864CBF','#FF6B9D','#00C2A8','#FF6D3F'];
 
 const QUESTION_BANK = [
@@ -198,15 +197,12 @@ const RETO_BANK=['Aguanta un libro en la cabeza 10 segundos','Di "tres tristes t
 
 const INTRO_MS=2600, TRIVIA_MS=20000, MUSIC_MS=25000, PERFORM_MS=60000, RETO_MS=45000, REVEAL_MS=4500;
 
-/* ================== utilidades ================== */
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function genId(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
 function genCode(){return String(Math.floor(1000+Math.random()*9000));}
 function shOpts(o,a){const t=o[a];const s=shuffle(o);return{o:s,a:s.indexOf(t)};}
 function pickFresh(bank,n,used){used=used||[];const u=new Set(used);let av=bank.filter(x=>!u.has(x));if(av.length<n){used.length=0;av=[...bank];}const ch=shuffle(av).slice(0,n);ch.forEach(c=>used.push(c));return{chosen:ch,used};}
 
-// Reparte una lista de "turnos" (cada uno con un pid) en un orden aleatorio
-// pero SIN que el mismo jugador aparezca en dos posiciones seguidas.
 function noConsecutiveShuffle(items){
   const buckets={};
   items.forEach(it=>{ (buckets[it.pid]=buckets[it.pid]||[]).push(it); });
@@ -215,8 +211,8 @@ function noConsecutiveShuffle(items){
   let remaining=Object.keys(buckets).filter(k=>buckets[k].length>0);
   while(remaining.length){
     let pool=shuffle(remaining.filter(k=>k!==lastPid));
-    if(pool.length===0) pool=shuffle(remaining); // último recurso, no debería pasar con 2+ jugadores
-    pool.sort((a,b)=>buckets[b].length-buckets[a].length); // prioriza a quien le quedan más turnos
+    if(pool.length===0) pool=shuffle(remaining);
+    pool.sort((a,b)=>buckets[b].length-buckets[a].length);
     const maxLeft=buckets[pool[0]].length;
     const top=pool.filter(k=>buckets[k].length===maxLeft);
     const chosen=top[Math.floor(Math.random()*top.length)];
@@ -250,7 +246,6 @@ function buildPlan(players,hist){
   return{plan:plan.map((r,i)=>({...r,id:i})),history:h};
 }
 
-/* ================== audio ================== */
 let audioCtx=null;
 function playMelody(melody){
   try{
@@ -265,7 +260,6 @@ function playMelody(melody){
   }catch(e){}
 }
 
-/* ================== estado local ================== */
 const state = {
   screen: 'home', mode: 'create',
   name: localStorage.getItem('ff_name')||'',
@@ -281,14 +275,12 @@ let hostTimer = null;
 
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-/* ================== Firebase refs ================== */
 const roomRef = c => ref(db, 'rooms/'+c);
 const metaRef = c => ref(db, 'rooms/'+c+'/meta');
 const playerRef = (c,pid) => ref(db, 'rooms/'+c+'/players/'+pid);
 const ansRef = (c,g,r,pid) => ref(db, 'rooms/'+c+'/g'+g+'/ans/'+r+'/'+pid);
 const resRef = (c,g,r) => ref(db, 'rooms/'+c+'/g'+g+'/res/'+r);
 
-/* ================== acciones ================== */
 async function createRoom(){
   if(!state.name.trim()){state.error='Escribe tu nombre';render();return;}
   saveProfile(); state.busy=true; state.error=''; render();
@@ -357,10 +349,6 @@ function saveProfile(){
 }
 function copyCode(){ try{navigator.clipboard.writeText(state.roomCode);state.copied=true;render();setTimeout(()=>{state.copied=false;render();},1500);}catch(e){} }
 
-/* ================== avance de la partida ================== */
-/* Lo ejecutan TODOS los clientes (no solo el anfitrión), con transacciones
-   para que nunca se procese dos veces. Así, si un móvil se bloquea, cualquier
-   otro que esté despierto hace avanzar la partida y no se cuelga. */
 function subscribeRoom(code){
   if(roomUnsub)roomUnsub();
   roomUnsub = onValue(roomRef(code), snap=>{
@@ -368,10 +356,10 @@ function subscribeRoom(code){
     state.meta = room.meta || null;
     state.lobbyPlayers = room.players || {};
     render();
-    advance(); // cada cambio en la sala dispara una comprobación
+    advance();
   });
   if(hostTimer)clearInterval(hostTimer);
-  hostTimer = setInterval(advance, 600); // respaldo para los tiempos límite
+  hostTimer = setInterval(advance, 600);
 }
 
 let advancing = false;
@@ -391,7 +379,7 @@ async function advance(){
     if(meta.sub==='intro'){
       if(meta.introAt && t-meta.introAt>INTRO_MS){
         await runTransaction(metaRef(code), m=>{
-          if(!m || m.phase!=='round' || m.sub!=='intro' || m.currentRound!==cr) return; // ya avanzó
+          if(!m || m.phase!=='round' || m.sub!=='intro' || m.currentRound!==cr) return;
           m.sub='active'; m.activeAt=Date.now(); return m;
         });
       }
@@ -407,10 +395,10 @@ async function advance(){
         const allAns=players.length>0 && list.length>=players.length;
         const timeUp=meta.activeAt && t-meta.activeAt>(round.type==='musica'?MUSIC_MS:TRIVIA_MS);
         if(allAns||timeUp){
-          const sorted=list.sort((a,b)=>a.at-b.at); const bonus=[50,30,20]; let rank=0; const deltas={};
+          const sorted=[...list].sort((a,b)=>a.at-b.at); const bonus=[50,30,20]; let rank=0; const deltas={};
           sorted.forEach(a=>{ if(a.o===round.correct){ deltas[a.pid]=100+(bonus[rank]!==undefined?bonus[rank]:10); rank++; } else deltas[a.pid]=0; });
           await runTransaction(metaRef(code), m=>{
-            if(!m || m.sub!=='active' || m.currentRound!==cr) return; // otro cliente ya lo hizo
+            if(!m || m.sub!=='active' || m.currentRound!==cr) return;
             const pl=m.players||{};
             Object.keys(deltas).forEach(pid=>{ if(pl[pid]) pl[pid].score=(pl[pid].score||0)+deltas[pid]; });
             m.players=pl; m.sub='reveal'; m.revealAt=Date.now(); m.lastResult={type:round.type,deltas};
@@ -428,7 +416,6 @@ async function advance(){
           const deltas={};
           if(round.type==='reto'){ if(success) deltas[round.pid]=100; }
           else if(success&&guesserId){ deltas[guesserId]=80; deltas[round.pid]=(deltas[round.pid]||0)+60; }
-          // lastResult SIN campos undefined (eso rompía Firebase y colgaba la partida)
           const lastResult={type:round.type, success:success, deltas:deltas};
           if(guesserId) lastResult.guesserId=guesserId;
           await runTransaction(metaRef(code), m=>{
@@ -454,15 +441,29 @@ async function advance(){
         });
       }
     }
-  }catch(e){ /* si una transacción falla, se reintenta en el siguiente ciclo */ }
+  }catch(e){}
   finally{ advancing=false; }
 }
 
-/* ================== reloj para animar barra ================== */
-setInterval(()=>{ if(state.screen==='room'&&state.meta&&(state.meta.sub==='active'||state.playingUntil>Date.now())) render(); }, 300);
+function tickTimer(){
+  if(state.screen!=='room' || !state.meta || state.meta.phase!=='round') return;
+  const meta=state.meta;
+  if(meta.sub!=='active') return;
+  const round=meta.plan[meta.currentRound]; if(!round) return;
+  const dur=round.type==='trivia'?TRIVIA_MS:round.type==='musica'?MUSIC_MS:round.type==='reto'?RETO_MS:PERFORM_MS;
+  const rem=Math.max(0,dur-(Date.now()-(meta.activeAt||Date.now())));
+  const pct=Math.max(0,Math.min(100,rem/dur*100));
+  const secs=Math.ceil(rem/1000);
+  const fill=document.getElementById('timerFill');
+  const secsEl=document.getElementById('timerSecs');
+  if(fill) fill.style.width=pct+'%';
+  if(secsEl) secsEl.textContent=secs+'s';
+  const label=document.getElementById('playBtnLabel');
+  if(label){ const playing=Date.now()<state.playingUntil; label.textContent=playing?'Sonando…':'Reproducir melodía'; }
+}
+setInterval(tickTimer, 250);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && state.roomCode) advance(); });
 
-/* ================== render (HTML) ================== */
 const app = document.getElementById('app');
 
 function avatarHTML(p,size){ return `<div class="avatar" style="width:${size}px;height:${size}px;background:${p.color};font-size:${Math.round(size*0.55)}px">${p.avatar}</div>`; }
@@ -559,10 +560,10 @@ function renderRound(meta,isHost,players){
       const isPlaying=Date.now()<state.playingUntil;
       app.innerHTML=`<div class="screen">
         ${dotsHTML(meta)}
-        <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} ${round.type==='trivia'?esc(round.category):cat.label}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
-        <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
+        <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} ${round.type==='trivia'?esc(round.category):cat.label}</span><span id="timerSecs" style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
+        <div class="bar"><div id="timerFill" style="width:${pct}%;background:${cat.color};color:${cat.color}"></div></div>
         ${round.type==='musica'
-          ? `<div class="center" style="flex:none;margin-bottom:26px"><button class="play-btn" data-act="play" style="background:${cat.color}">▶️ ${isPlaying?'Sonando…':'Reproducir melodía'}</button><p style="color:rgba(255,255,255,.6);font-size:14px;margin-top:10px">Que suene en un móvil (subid volumen). ¿Qué canción es?</p></div>`
+          ? `<div class="center" style="flex:none;margin-bottom:26px"><button class="play-btn" id="playBtn" data-act="play" style="background:${cat.color}">▶️ <span id="playBtnLabel">${isPlaying?'Sonando…':'Reproducir melodía'}</span></button><p style="color:rgba(255,255,255,.6);font-size:14px;margin-top:10px">Que suene en un móvil (subid volumen). ¿Qué canción es?</p></div>`
           : `<h2>${esc(round.question)}</h2>`}
         <div class="opts">${round.options.map((o,i)=>{const sel=state.selectedOption===i;const bg=answered?(sel?optColors[i]:'rgba(255,255,255,.08)'):optColors[i];const col=answered&&!sel?'rgba(255,255,255,.4)':'#fff';return `<button class="opt" data-answer="${i}" ${answered?'disabled':''} style="background:${bg};color:${col}">${esc(o)}</button>`;}).join('')}</div>
         ${answered?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600;margin-top:22px">Respuesta enviada, esperando…</p>':''}
@@ -573,20 +574,19 @@ function renderRound(meta,isHost,players){
       const submitted=state.submittedResult===meta.currentRound;
       app.innerHTML=`<div class="screen">
         ${dotsHTML(meta)}
-        <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} Reto para ${esc(prot.name)}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
-        <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
+        <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} Reto para ${esc(prot.name)}</span><span id="timerSecs" style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
+        <div class="bar"><div id="timerFill" style="width:${pct}%;background:${cat.color};color:${cat.color}"></div></div>
         <div class="center" style="flex:1;gap:16px">${avatarHTML(prot,64)}<h2>${esc(round.prompt)}</h2>${!isProt?`<p style="color:rgba(255,255,255,.6);font-weight:600">${cat.hint}</p>`:''}</div>
         ${isProt&&!submitted?`<div style="display:flex;gap:12px"><button class="btn btn-green" data-res="ok">✅ Conseguido</button><button class="btn btn-red" data-res="no">❌ No sale</button></div>`:(isProt?'<p style="text-align:center;color:rgba(255,255,255,.6);font-weight:600">Resultado enviado…</p>':'')}
       </div>`;
       return bind();
     }
-    // perform: mimica/cantar/dibujar
     const submitted=state.submittedResult===meta.currentRound;
     const others=players.filter(p=>p.id!==round.pid);
     app.innerHTML=`<div class="screen">
       ${dotsHTML(meta)}
-      <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} ${cat.label}</span><span style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
-      <div class="bar"><div style="width:${pct}%;background:${cat.color}"></div></div>
+      <div class="row-between"><span class="label" style="margin:0;color:${cat.color}">${cat.icon} ${cat.label}</span><span id="timerSecs" style="font-weight:600;color:rgba(255,255,255,.6)">${secs}s</span></div>
+      <div class="bar"><div id="timerFill" style="width:${pct}%;background:${cat.color};color:${cat.color}"></div></div>
       ${isProt
         ? `<p style="color:rgba(255,255,255,.6);font-weight:600;margin-bottom:8px">Esto solo lo ves tú:</p>
            <div class="secret">${esc(round.prompt)}</div>
@@ -611,8 +611,8 @@ function renderRound(meta,isHost,players){
     } else if(round.type==='reto'){
       banner=`<div class="banner" style="background:${lr.success?'#26890C':'rgba(255,255,255,.08)'}">${lr.success?'✅ ¡'+esc(prot.name)+' lo consigue! +100':'❌ Reto no conseguido'}</div>`;
     } else {
-      const g=lr.guesserId&&players.find(p=>p.id===lr.guesserId);
-      banner=`<div class="banner" style="background:${lr.success?'#864CBF':'rgba(255,255,255,.08)'}">${lr.success?'🎉 ¡'+esc(g?g.name:'Alguien')+' acierta! +80 / '+esc(prot.name)+' +60':'😅 Nadie lo ha adivinado'}</div>`;
+      const gg=lr.guesserId&&players.find(p=>p.id===lr.guesserId);
+      banner=`<div class="banner" style="background:${lr.success?'#864CBF':'rgba(255,255,255,.08)'}">${lr.success?'🎉 ¡'+esc(gg?gg.name:'Alguien')+' acierta! +80 / '+esc(prot.name)+' +60':'😅 Nadie lo ha adivinado'}</div>`;
     }
     app.innerHTML=`<div class="screen">
       ${dotsHTML(meta)}
@@ -648,7 +648,6 @@ function renderEnd(meta,isHost,players){
   bind();
 }
 
-/* ================== eventos ================== */
 function bind(){
   const nameI=document.getElementById('nameInput');
   if(nameI) nameI.oninput=e=>{state.name=e.target.value;};
