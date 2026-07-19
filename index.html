@@ -110,6 +110,7 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 
+/* ================== datos ================== */
 const CATS = {
   trivia: { label: 'Preguntas', color: '#1368CE', icon: '❓', hint: 'Responded todos desde vuestro móvil' },
   musica: { label: 'Adivina la melodía', color: '#00B8A9', icon: '🎵', hint: 'Que suene en un móvil y responded todos' },
@@ -288,12 +289,15 @@ const RETO_BANK=['Aguanta un libro en la cabeza 10 segundos','Di "tres tristes t
 
 const INTRO_MS=2600, TRIVIA_MS=20000, MUSIC_MS=25000, PERFORM_MS=60000, RETO_MS=45000, REVEAL_MS=4500;
 
+/* ================== utilidades ================== */
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function genId(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
 function genCode(){return String(Math.floor(1000+Math.random()*9000));}
 function shOpts(o,a){const t=o[a];const s=shuffle(o);return{o:s,a:s.indexOf(t)};}
 function pickFresh(bank,n,used){used=used||[];const u=new Set(used);let av=bank.filter(x=>!u.has(x));if(av.length<n){used.length=0;av=[...bank];}const ch=shuffle(av).slice(0,n);ch.forEach(c=>used.push(c));return{chosen:ch,used};}
 
+// Elige n preguntas repartidas entre TODAS las categorías disponibles antes de repetir ninguna
+// (evita que una partida salga "toda de Historia" o "toda de Música").
 function pickDiverseTrivia(n, usedArr){
   usedArr = usedArr || [];
   const used = new Set(usedArr);
@@ -309,13 +313,15 @@ function pickDiverseTrivia(n, usedArr){
       if (chosen.length >= n) break;
       if (byCat[c].length) { chosen.push(byCat[c].shift()); picked = true; }
     }
-    if (!picked) break;
+    if (!picked) break; // se han agotado todas las categorías disponibles
     cats = shuffle(cats);
   }
   chosen.forEach(q => usedArr.push(q.q));
   return { chosen, used: usedArr };
 }
 
+// Igual que arriba pero por compositor/estilo de las melodías, con tope de 1 por compositor
+// mientras haya compositores distintos disponibles (evita "todo Beethoven").
 function pickDiverseMusic(n, usedArr){
   usedArr = usedArr || [];
   const used = new Set(usedArr);
@@ -338,31 +344,34 @@ function pickDiverseMusic(n, usedArr){
   return { chosen, used: usedArr };
 }
 
-function noConsecutiveShuffle(items){
+// Reparte una lista de "turnos" (cada uno con un pid) en un orden aleatorio
+// pero SIN que el mismo jugador aparezca en dos posiciones seguidas.
+function noConsecutiveShuffleBy(items, keyFn){
   const buckets={};
-  items.forEach(it=>{ (buckets[it.pid]=buckets[it.pid]||[]).push(it); });
+  items.forEach(it=>{ const k=keyFn(it); (buckets[k]=buckets[k]||[]).push(it); });
   Object.keys(buckets).forEach(k=>{ buckets[k]=shuffle(buckets[k]); });
-  const result=[]; let lastPid=null;
+  const result=[]; let lastKey=null;
   let remaining=Object.keys(buckets).filter(k=>buckets[k].length>0);
   while(remaining.length){
-    let pool=shuffle(remaining.filter(k=>k!==lastPid));
-    if(pool.length===0) pool=shuffle(remaining);
-    pool.sort((a,b)=>buckets[b].length-buckets[a].length);
+    let pool=shuffle(remaining.filter(k=>k!==lastKey));
+    if(pool.length===0) pool=shuffle(remaining); // último recurso
+    pool.sort((a,b)=>buckets[b].length-buckets[a].length); // prioriza al que le quedan más
     const maxLeft=buckets[pool[0]].length;
     const top=pool.filter(k=>buckets[k].length===maxLeft);
     const chosen=top[Math.floor(Math.random()*top.length)];
     result.push(buckets[chosen].shift());
-    lastPid=chosen;
+    lastKey=chosen;
     remaining=Object.keys(buckets).filter(k=>buckets[k].length>0);
   }
   return result;
 }
+function noConsecutiveShuffle(items){ return noConsecutiveShuffleBy(items, it=>it.pid); }
 
 function buildPlan(players,hist){
   const h=hist||{};['mimica','cantar','dibujar','reto','trivia','musica'].forEach(k=>{if(!Array.isArray(h[k]))h[k]=[];});
   const perfCats=['mimica','cantar','dibujar','reto'];
   const banks={mimica:MIMICA_BANK,cantar:CANTAR_BANK,dibujar:DIBUJAR_BANK,reto:RETO_BANK};
-  const passes = players.length<=8?2:1;
+  const passes = players.length<=5?3:(players.length<=8?2:1);
   let perf=[];
   for(let pass=0;pass<passes;pass++){
     const sp=shuffle(players), sc=shuffle(perfCats);
@@ -370,15 +379,18 @@ function buildPlan(players,hist){
   }
   perf=noConsecutiveShuffle(perf);
 
-  const quizTotal = Math.min(14, Math.max(6, Math.round(perf.length*0.9)));
-  const musicCount = Math.min(4, Math.max(1, Math.round(quizTotal*0.22)));
+  // el total de preguntas+música va ligado al número de actuaciones, para que la partida
+  // quede equilibrada (ni un aluvión de música ni una partida eterna de preguntas)
+  const quizTotal = Math.min(18, Math.max(8, Math.round(perf.length*0.9)));
+  const musicCount = Math.min(2, Math.max(1, Math.round(quizTotal*0.15))); // tope DURO: nunca más de 2 rondas de música por partida
   const triviaCount = quizTotal - musicCount;
 
   const tq=pickDiverseTrivia(triviaCount,h.trivia);h.trivia=tq.used;
   const trivia=tq.chosen.map(q=>{const s=shOpts(q.o,q.a);return{type:'trivia',category:q.c,question:q.q,options:s.o,correct:s.a};});
   const ms=pickDiverseMusic(musicCount,h.musica);h.musica=ms.used;
   const music=ms.chosen.map(m=>{const s=shOpts(m.o,m.a);return{type:'musica',song:m.song,melody:m.m,options:s.o,correct:s.a};});
-  const quiz=shuffle([...trivia,...music]);
+  // reparto sin dos rondas de música seguidas (antes un shuffle a secas podía dejarlas todas pegadas al final)
+  const quiz=noConsecutiveShuffleBy([...trivia,...music], it=>it.type);
 
   const total=perf.length+quiz.length;
   const qpos=new Set();for(let k=0;k<quiz.length;k++)qpos.add(Math.round((k+0.5)*total/quiz.length));
@@ -387,6 +399,7 @@ function buildPlan(players,hist){
   return{plan:plan.map((r,i)=>({...r,id:i})),history:h};
 }
 
+/* ================== audio ================== */
 let audioCtx=null;
 function playMelody(melody){
   try{
@@ -401,6 +414,7 @@ function playMelody(melody){
   }catch(e){}
 }
 
+/* ================== estado local ================== */
 const state = {
   screen: 'home', mode: 'create',
   name: localStorage.getItem('ff_name')||'',
@@ -416,12 +430,14 @@ let hostTimer = null;
 
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* ================== Firebase refs ================== */
 const roomRef = c => ref(db, 'rooms/'+c);
 const metaRef = c => ref(db, 'rooms/'+c+'/meta');
 const playerRef = (c,pid) => ref(db, 'rooms/'+c+'/players/'+pid);
 const ansRef = (c,g,r,pid) => ref(db, 'rooms/'+c+'/g'+g+'/ans/'+r+'/'+pid);
 const resRef = (c,g,r) => ref(db, 'rooms/'+c+'/g'+g+'/res/'+r);
 
+/* ================== acciones ================== */
 async function createRoom(){
   if(!state.name.trim()){state.error='Escribe tu nombre';render();return;}
   saveProfile(); state.busy=true; state.error=''; render();
@@ -490,6 +506,10 @@ function saveProfile(){
 }
 function copyCode(){ try{navigator.clipboard.writeText(state.roomCode);state.copied=true;render();setTimeout(()=>{state.copied=false;render();},1500);}catch(e){} }
 
+/* ================== avance de la partida ================== */
+/* Lo ejecutan TODOS los clientes (no solo el anfitrión), con transacciones
+   para que nunca se procese dos veces. Así, si un móvil se bloquea, cualquier
+   otro que esté despierto hace avanzar la partida y no se cuelga. */
 function subscribeRoom(code){
   if(roomUnsub)roomUnsub();
   roomUnsub = onValue(roomRef(code), snap=>{
@@ -497,10 +517,10 @@ function subscribeRoom(code){
     state.meta = room.meta || null;
     state.lobbyPlayers = room.players || {};
     render();
-    advance();
+    advance(); // cada cambio en la sala dispara una comprobación
   });
   if(hostTimer)clearInterval(hostTimer);
-  hostTimer = setInterval(advance, 600);
+  hostTimer = setInterval(advance, 600); // respaldo para los tiempos límite
 }
 
 let advancing = false;
@@ -520,7 +540,7 @@ async function advance(){
     if(meta.sub==='intro'){
       if(meta.introAt && t-meta.introAt>INTRO_MS){
         await runTransaction(metaRef(code), m=>{
-          if(!m || m.phase!=='round' || m.sub!=='intro' || m.currentRound!==cr) return;
+          if(!m || m.phase!=='round' || m.sub!=='intro' || m.currentRound!==cr) return; // ya avanzó
           m.sub='active'; m.activeAt=Date.now(); return m;
         });
       }
@@ -539,7 +559,7 @@ async function advance(){
           const sorted=list.sort((a,b)=>a.at-b.at); const bonus=[50,30,20]; let rank=0; const deltas={};
           sorted.forEach(a=>{ if(a.o===round.correct){ deltas[a.pid]=100+(bonus[rank]!==undefined?bonus[rank]:10); rank++; } else deltas[a.pid]=0; });
           await runTransaction(metaRef(code), m=>{
-            if(!m || m.sub!=='active' || m.currentRound!==cr) return;
+            if(!m || m.sub!=='active' || m.currentRound!==cr) return; // otro cliente ya lo hizo
             const pl=m.players||{};
             Object.keys(deltas).forEach(pid=>{ if(pl[pid]) pl[pid].score=(pl[pid].score||0)+deltas[pid]; });
             m.players=pl; m.sub='reveal'; m.revealAt=Date.now(); m.lastResult={type:round.type,deltas};
@@ -557,6 +577,7 @@ async function advance(){
           const deltas={};
           if(round.type==='reto'){ if(success) deltas[round.pid]=100; }
           else if(success&&guesserId){ deltas[guesserId]=80; deltas[round.pid]=(deltas[round.pid]||0)+60; }
+          // lastResult SIN campos undefined (eso rompía Firebase y colgaba la partida)
           const lastResult={type:round.type, success:success, deltas:deltas};
           if(guesserId) lastResult.guesserId=guesserId;
           await runTransaction(metaRef(code), m=>{
@@ -582,14 +603,19 @@ async function advance(){
         });
       }
     }
-  }catch(e){}
+  }catch(e){ /* si una transacción falla, se reintenta en el siguiente ciclo */ }
   finally{ advancing=false; }
 }
 
+/* ================== reloj para animar barra ================== */
+/* Actualiza SOLO el temporizador (sin reconstruir toda la pantalla) para que no salte ni vaya a trompicones */
 function tickTimer(){
   if(state.screen!=='room' || !state.meta || state.meta.phase!=='round') return;
   const meta=state.meta;
-  if(meta.sub!=='active') return;
+  if(meta.sub!=='active'){
+    // fuera de la fase activa solo hace falta refrescar el botón de "sonando" si procede
+    return;
+  }
   const round=meta.plan[meta.currentRound]; if(!round) return;
   const dur=round.type==='trivia'?TRIVIA_MS:round.type==='musica'?MUSIC_MS:round.type==='reto'?RETO_MS:PERFORM_MS;
   const rem=Math.max(0,dur-(Date.now()-(meta.activeAt||Date.now())));
@@ -605,6 +631,7 @@ function tickTimer(){
 setInterval(tickTimer, 250);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && state.roomCode) advance(); });
 
+/* ================== render (HTML) ================== */
 const app = document.getElementById('app');
 
 function avatarHTML(p,size){ return `<div class="avatar" style="width:${size}px;height:${size}px;background:${p.color};font-size:${Math.round(size*0.55)}px">${p.avatar}</div>`; }
@@ -621,6 +648,7 @@ function render(){
         <button class="btn btn-blue" data-act="go-join">Unirse a partida</button>
       </div>
       <p class="tiny">Tened a mano papel y boli para dibujar 🎨. Funciona en cualquier móvil, sin instalar nada.</p>
+      <p style="font-size:10px;color:rgba(255,255,255,.25);margin-top:14px;letter-spacing:1px">BUILD 7</p>
     </div>`;
     return bind();
   }
@@ -725,6 +753,7 @@ function renderRound(meta,isHost,players){
       </div>`;
       return bind();
     }
+    // perform: mimica/cantar/dibujar
     const submitted=state.submittedResult===meta.currentRound;
     const others=players.filter(p=>p.id!==round.pid);
     app.innerHTML=`<div class="screen">
@@ -792,6 +821,7 @@ function renderEnd(meta,isHost,players){
   bind();
 }
 
+/* ================== eventos ================== */
 function bind(){
   const nameI=document.getElementById('nameInput');
   if(nameI) nameI.oninput=e=>{state.name=e.target.value;};
